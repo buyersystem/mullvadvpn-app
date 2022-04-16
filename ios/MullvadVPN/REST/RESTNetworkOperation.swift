@@ -66,9 +66,7 @@ extension REST {
         private let logger = Logger(label: "REST.NetworkOperation")
         private let loggerMetadata: Logger.Metadata
 
-
         init<T>(
-            taskIdentifier: UInt32,
             name: String,
             dispatchQueue: DispatchQueue,
             urlSession: URLSession,
@@ -84,7 +82,7 @@ extension REST {
             self.retryStrategy = retryStrategy
             self.requestHandler = AnyRequestHandler(requestHandler)
 
-            loggerMetadata = ["taskIdentifier": .stringConvertible(taskIdentifier), "name": .string(name)]
+            loggerMetadata = ["name": .string(name)]
 
             super.init(completionQueue: .main, completionHandler: completionHandler)
         }
