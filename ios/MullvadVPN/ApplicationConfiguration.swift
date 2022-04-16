@@ -47,8 +47,11 @@ extension ApplicationConfiguration {
     /// Default API hostname.
     static let defaultAPIHostname = "api.mullvad.net"
 
-    /// Default API endpoint
+    /// Default API endpoint.
     static let defaultAPIEndpoint = AnyIPEndpoint(string: "193.138.218.78:443")!
+
+    /// Default network timeout for API requests.
+    static let defaultAPINetworkTimeout: TimeInterval = 10
 
     /// Background fetch minimum interval
     static let minimumBackgroundFetchInterval: TimeInterval = 3600

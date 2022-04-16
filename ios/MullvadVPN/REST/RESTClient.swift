@@ -33,7 +33,7 @@ extension REST {
         private let requestFactory = REST.RequestFactory(
             hostname: ApplicationConfiguration.defaultAPIHostname,
             pathPrefix: "/app/v1",
-            networkTimeout: 10
+            networkTimeout: ApplicationConfiguration.defaultAPINetworkTimeout
         )
 
         /// Operation queue used for running network requests.
