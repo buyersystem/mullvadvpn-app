@@ -87,9 +87,9 @@ extension REST {
                 },
                 handleURLResponse: { response, data -> Result<AccountResponse, REST.Error> in
                     if HTTPStatus.isSuccess(response.statusCode) {
-                        return Self.decodeSuccessResponse(AccountResponse.self, from: data)
+                        return ResponseHandling.decodeSuccessResponse(AccountResponse.self, from: data)
                     } else {
-                        return Self.decodeErrorResponseAndMapToServerError(from: data)
+                        return ResponseHandling.decodeErrorResponseAndMapToServerError(from: data)
                     }
                 }
             )
@@ -117,9 +117,9 @@ extension REST {
                 },
                 handleURLResponse: { response, data -> Result<[AnyIPEndpoint], REST.Error> in
                     if HTTPStatus.isSuccess(response.statusCode) {
-                        return Self.decodeSuccessResponse([AnyIPEndpoint].self, from: data)
+                        return ResponseHandling.decodeSuccessResponse([AnyIPEndpoint].self, from: data)
                     } else {
-                        return Self.decodeErrorResponseAndMapToServerError(from: data)
+                        return ResponseHandling.decodeErrorResponseAndMapToServerError(from: data)
                     }
                 }
             )
@@ -154,7 +154,7 @@ extension REST {
                 },
                 handleURLResponse: { response, data -> Result<ServerRelaysCacheResponse, REST.Error> in
                     if HTTPStatus.isSuccess(response.statusCode) {
-                        return Self.decodeSuccessResponse(ServerRelaysResponse.self, from: data)
+                        return ResponseHandling.decodeSuccessResponse(ServerRelaysResponse.self, from: data)
                             .map { serverRelays in
                                 let newEtag = response.value(forCaseInsensitiveHTTPHeaderField: HTTPHeader.etag)
                                 return .newContent(newEtag, serverRelays)
@@ -162,7 +162,7 @@ extension REST {
                     } else if response.statusCode == HTTPStatus.notModified && etag != nil {
                         return .success(.notModified)
                     } else {
-                        return Self.decodeErrorResponseAndMapToServerError(from: data)
+                        return ResponseHandling.decodeErrorResponseAndMapToServerError(from: data)
                     }
                 }
             )
@@ -195,9 +195,9 @@ extension REST {
                 },
                 handleURLResponse: { response, data -> Result<AccountResponse, REST.Error> in
                     if HTTPStatus.isSuccess(response.statusCode) {
-                        return Self.decodeSuccessResponse(AccountResponse.self, from: data)
+                        return ResponseHandling.decodeSuccessResponse(AccountResponse.self, from: data)
                     } else {
-                        return Self.decodeErrorResponseAndMapToServerError(from: data)
+                        return ResponseHandling.decodeErrorResponseAndMapToServerError(from: data)
                     }
                 }
             )
@@ -235,9 +235,9 @@ extension REST {
                 },
                 handleURLResponse: { response, data -> Result<WireguardAddressesResponse, REST.Error> in
                     if HTTPStatus.isSuccess(response.statusCode) {
-                        return Self.decodeSuccessResponse(WireguardAddressesResponse.self, from: data)
+                        return ResponseHandling.decodeSuccessResponse(WireguardAddressesResponse.self, from: data)
                     } else {
-                        return Self.decodeErrorResponseAndMapToServerError(from: data)
+                        return ResponseHandling.decodeErrorResponseAndMapToServerError(from: data)
                     }
                 }
             )
@@ -278,9 +278,9 @@ extension REST {
                 },
                 handleURLResponse: { response, data -> Result<WireguardAddressesResponse, REST.Error> in
                     if HTTPStatus.isSuccess(response.statusCode) {
-                        return Self.decodeSuccessResponse(WireguardAddressesResponse.self, from: data)
+                        return ResponseHandling.decodeSuccessResponse(WireguardAddressesResponse.self, from: data)
                     } else {
-                        return Self.decodeErrorResponseAndMapToServerError(from: data)
+                        return ResponseHandling.decodeErrorResponseAndMapToServerError(from: data)
                     }
                 }
             )
@@ -323,9 +323,9 @@ extension REST {
                 },
                 handleURLResponse: { response, data -> Result<WireguardAddressesResponse, REST.Error> in
                     if HTTPStatus.isSuccess(response.statusCode) {
-                        return Self.decodeSuccessResponse(WireguardAddressesResponse.self, from: data)
+                        return ResponseHandling.decodeSuccessResponse(WireguardAddressesResponse.self, from: data)
                     } else {
-                        return Self.decodeErrorResponseAndMapToServerError(from: data)
+                        return ResponseHandling.decodeErrorResponseAndMapToServerError(from: data)
                     }
                 }
             )
@@ -364,7 +364,7 @@ extension REST {
                     if HTTPStatus.isSuccess(response.statusCode) {
                         return .success(())
                     } else {
-                        return Self.decodeErrorResponseAndMapToServerError(from: data)
+                        return ResponseHandling.decodeErrorResponseAndMapToServerError(from: data)
                     }
                 }
             )
@@ -404,7 +404,7 @@ extension REST {
                 },
                 handleURLResponse: { response, data -> Result<CreateApplePaymentResponse, REST.Error> in
                     if HTTPStatus.isSuccess(response.statusCode) {
-                        return REST.Client.decodeSuccessResponse(CreateApplePaymentRawResponse.self, from: data)
+                        return ResponseHandling.decodeSuccessResponse(CreateApplePaymentRawResponse.self, from: data)
                             .map { (response) in
                                 if response.timeAdded > 0 {
                                     return .timeAdded(response.timeAdded, response.newExpiry)
@@ -413,7 +413,7 @@ extension REST {
                                 }
                             }
                     } else {
-                        return Self.decodeErrorResponseAndMapToServerError(from: data)
+                        return ResponseHandling.decodeErrorResponseAndMapToServerError(from: data)
                     }
                 }
             )
@@ -451,7 +451,7 @@ extension REST {
                     if HTTPStatus.isSuccess(response.statusCode) {
                         return .success(())
                     } else {
-                        return Self.decodeErrorResponseAndMapToServerError(from: data)
+                        return ResponseHandling.decodeErrorResponseAndMapToServerError(from: data)
                     }
                 }
             )
@@ -497,53 +497,6 @@ extension REST {
             operationQueue.addOperation(operation)
 
             return operation
-        }
-
-        private func dataTask(request: URLRequest, completion: @escaping (Result<(HTTPURLResponse, Data), URLError>) -> Void) -> URLSessionDataTask {
-            return self.session.dataTask(with: request) { data, response, error in
-                if let error = error {
-                    let urlError = error as? URLError ?? URLError(.unknown)
-
-                    completion(.failure(urlError))
-                } else {
-                    if let httpResponse = response as? HTTPURLResponse {
-                        let data = data ?? Data()
-                        let value = (httpResponse, data)
-
-                        completion(.success(value))
-                    } else {
-                        completion(.failure(URLError(.unknown)))
-                    }
-                }
-            }
-        }
-
-        /// Parse JSON response into the given `Decodable` type.
-        private static func decodeSuccessResponse<T: Decodable>(_ type: T.Type, from data: Data) -> Result<T, REST.Error> {
-            return Result { try REST.Coding.makeJSONDecoder().decode(type, from: data) }
-            .mapError { error in
-                return .decodeSuccessResponse(error)
-            }
-        }
-
-        /// Parse JSON response in case of error (Any HTTP code except 2xx).
-        private static func decodeErrorResponse(from data: Data) -> Result<ServerErrorResponse, REST.Error> {
-            return Result { () -> ServerErrorResponse in
-                return try REST.Coding.makeJSONDecoder().decode(ServerErrorResponse.self, from: data)
-            }.mapError { error in
-                return .decodeErrorResponse(error)
-            }
-        }
-
-        private static func decodeErrorResponseAndMapToServerError<T>(from data: Data) -> Result<T, REST.Error> {
-            return Self.decodeErrorResponse(from: data)
-                .flatMap { serverError in
-                    return .failure(.server(serverError))
-                }
-        }
-
-        private static func mapNetworkError(_ error: URLError) -> REST.Error {
-            return .network(error)
         }
     }
 
