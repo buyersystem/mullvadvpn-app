@@ -21,6 +21,14 @@ enum OperationCompletion<Success, Failure: Error> {
         }
     }
 
+    var value: Success? {
+        if case .success(let value) = self {
+            return value
+        } else {
+            return nil
+        }
+    }
+
     var error: Failure? {
         if case .failure(let error) = self {
             return error
