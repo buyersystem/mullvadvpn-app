@@ -212,6 +212,7 @@
 		58B0A2AD238EE6EC00BC001D /* MullvadEndpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5840250322B11AB700E4CFEC /* MullvadEndpoint.swift */; };
 		58B3F30F2742708B00A2DD38 /* HeaderBarButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58B3F30E2742708B00A2DD38 /* HeaderBarButton.swift */; };
 		58B43C1925F77DB60002C8C3 /* ConnectMainContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58B43C1825F77DB60002C8C3 /* ConnectMainContentView.swift */; };
+		58B5A895280AACC4009FDE99 /* RESTRequestFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58B5A894280AACC4009FDE99 /* RESTRequestFactory.swift */; };
 		58B67B482602079E008EF58E /* RelaySelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58781CD422AFBA39009B9D8E /* RelaySelector.swift */; };
 		58B93A1326C3F13600A55733 /* TunnelState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58B93A1226C3F13600A55733 /* TunnelState.swift */; };
 		58B993B12608A34500BA7811 /* LoginContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58B993B02608A34500BA7811 /* LoginContentView.swift */; };
@@ -485,6 +486,7 @@
 		58B0A2A4238EE67E00BC001D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		58B3F30E2742708B00A2DD38 /* HeaderBarButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeaderBarButton.swift; sourceTree = "<group>"; };
 		58B43C1825F77DB60002C8C3 /* ConnectMainContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectMainContentView.swift; sourceTree = "<group>"; };
+		58B5A894280AACC4009FDE99 /* RESTRequestFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RESTRequestFactory.swift; sourceTree = "<group>"; };
 		58B93A1226C3F13600A55733 /* TunnelState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TunnelState.swift; sourceTree = "<group>"; };
 		58B993B02608A34500BA7811 /* LoginContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginContentView.swift; sourceTree = "<group>"; };
 		58B9EB122488ED2100095626 /* AlertPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertPresenter.swift; sourceTree = "<group>"; };
@@ -744,6 +746,7 @@
 				585DA88926B027A300B8C587 /* RESTCoding.swift */,
 				585DA88626B0277200B8C587 /* RESTError.swift */,
 				58095C522760EEC700890776 /* RESTNetworkOperation.swift */,
+				58B5A894280AACC4009FDE99 /* RESTRequestFactory.swift */,
 				58095C582762155700890776 /* RESTRetryStrategy.swift */,
 				585DA88326B0270700B8C587 /* ServerRelaysResponse.swift */,
 				584789DF26529D72000E45FB /* SSLPinningURLSessionDelegate.swift */,
@@ -1429,6 +1432,7 @@
 				58CCA01E2242787B004F3011 /* AccountTextField.swift in Sources */,
 				586E54FB27A2DF6D0029B88B /* TunnelIPCRequestOperation.swift in Sources */,
 				584592612639B4A200EF967F /* ConsentContentView.swift in Sources */,
+				58B5A895280AACC4009FDE99 /* RESTRequestFactory.swift in Sources */,
 				584EBDBD2747C98F00A0C9FD /* NSAttributedString+Markdown.swift in Sources */,
 				5875960A26F371FC00BF6711 /* TunnelIPCSession.swift in Sources */,
 				58FB865E26EA284E00F188BC /* LogFormatting.swift in Sources */,

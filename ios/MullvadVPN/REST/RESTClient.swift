@@ -24,17 +24,15 @@ extension REST {
         /// URL session delegate.
         private let sessionDelegate: SSLPinningURLSessionDelegate
 
-        /// REST API hostname.
-        private let apiHostname = "api.mullvad.net"
-
-        /// REST API base path.
-        private let apiBasePath = "/app/v1"
-
-        /// Network request timeout in seconds.
-        private let networkTimeout: TimeInterval = 10
-
         /// Address cache store.
         private let addressCacheStore: AddressCache.Store
+
+        /// REST request factory.
+        private let requestFactory = REST.RequestFactory(
+            hostname: ApplicationConfiguration.defaultAPIHostname,
+            pathPrefix: "/app/v1",
+            networkTimeout: 10
+        )
 
         /// Operation queue used for running network requests.
         private let operationQueue = OperationQueue()
@@ -56,8 +54,15 @@ extension REST {
         }
 
         init(addressCacheStore: AddressCache.Store) {
-            sessionDelegate = SSLPinningURLSessionDelegate(sslHostname: apiHostname, trustedRootCertificates: Self.trustedRootCertificates)
-            session = URLSession(configuration: .ephemeral, delegate: sessionDelegate, delegateQueue: nil)
+            sessionDelegate = SSLPinningURLSessionDelegate(
+                sslHostname: ApplicationConfiguration.defaultAPIHostname,
+                trustedRootCertificates: Self.trustedRootCertificates
+            )
+            session = URLSession(
+                configuration: .ephemeral,
+                delegate: sessionDelegate,
+                delegateQueue: nil
+            )
             self.addressCacheStore = addressCacheStore
         }
 
@@ -65,7 +70,7 @@ extension REST {
 
         func createAccount(retryStrategy: REST.RetryStrategy, completionHandler: @escaping (OperationCompletion<AccountResponse, REST.Error>) -> Void) -> Cancellable {
             return scheduleOperation(name: "create-account", retryStrategy: retryStrategy, completionHandler: completionHandler) { endpoint, finishOperation in
-                let request = self.createURLRequestWithEndpoint(endpoint: endpoint, method: .post, path: "accounts")
+                let request = self.requestFactory.createURLRequest(endpoint: endpoint, method: .post, path: "accounts")
 
                 let dataTask = self.dataTask(request: request) { responseResult in
                     let restResult = responseResult
@@ -87,7 +92,7 @@ extension REST {
 
         func getAddressList(retryStrategy: REST.RetryStrategy, completionHandler: @escaping (OperationCompletion<[AnyIPEndpoint], REST.Error>) -> Void) -> Cancellable {
             return scheduleOperation(name: "get-api-addrs", retryStrategy: retryStrategy, completionHandler: completionHandler) { endpoint, finishOperation in
-                let request = self.createURLRequestWithEndpoint(endpoint: endpoint, method: .get, path: "api-addrs")
+                let request = self.requestFactory.createURLRequest(endpoint: endpoint, method: .get, path: "api-addrs")
 
                 let dataTask = self.dataTask(request: request) { responseResult in
                     let restResult = responseResult.mapError(Self.mapNetworkError)
@@ -108,7 +113,7 @@ extension REST {
 
         func getRelays(etag: String?, retryStrategy: REST.RetryStrategy, completionHandler: @escaping (OperationCompletion<ServerRelaysCacheResponse, REST.Error>) -> Void) -> Cancellable {
             return scheduleOperation(name: "get-relays", retryStrategy: retryStrategy, completionHandler: completionHandler) { endpoint, finishOperation in
-                var request = self.createURLRequestWithEndpoint(endpoint: endpoint, method: .get, path: "relays")
+                var request = self.requestFactory.createURLRequest(endpoint: endpoint, method: .get, path: "relays")
                 if let etag = etag {
                     Self.setETagHeader(etag: etag, request: &request)
                 }
@@ -138,7 +143,7 @@ extension REST {
 
         func getAccountExpiry(token: String, retryStrategy: REST.RetryStrategy, completionHandler: @escaping (OperationCompletion<AccountResponse, REST.Error>) -> Void) -> Cancellable {
             return scheduleOperation(name: "get-account-expiry", retryStrategy: retryStrategy, completionHandler: completionHandler) { endpoint, finishOperation in
-                var request = self.createURLRequestWithEndpoint(endpoint: endpoint, method: .get, path: "me")
+                var request = self.requestFactory.createURLRequest(endpoint: endpoint, method: .get, path: "me")
 
                 Self.setAuthenticationToken(token: token, request: &request)
 
@@ -165,7 +170,7 @@ extension REST {
                     .addingPercentEncoding(withAllowedCharacters: .alphanumerics)!
 
                 let path = "wireguard-keys/".appending(urlEncodedPublicKey)
-                var request = self.createURLRequestWithEndpoint(endpoint: endpoint, method: .get, path: path)
+                var request = self.requestFactory.createURLRequest(endpoint: endpoint, method: .get, path: path)
 
                 Self.setAuthenticationToken(token: token, request: &request)
 
@@ -187,7 +192,7 @@ extension REST {
 
         func pushWireguardKey(token: String, publicKey: PublicKey, retryStrategy: REST.RetryStrategy, completionHandler: @escaping (OperationCompletion<WireguardAddressesResponse, REST.Error>) -> Void) -> Cancellable {
             return scheduleOperation(name: "push-wireguard-key", retryStrategy: retryStrategy, completionHandler: completionHandler) { endpoint, finishOperation in
-                var request = self.createURLRequestWithEndpoint(endpoint: endpoint, method: .post, path: "wireguard-keys")
+                var request = self.requestFactory.createURLRequest(endpoint: endpoint, method: .post, path: "wireguard-keys")
                 let body = PushWireguardKeyRequest(pubkey: publicKey.rawValue)
 
                 Self.setAuthenticationToken(token: token, request: &request)
@@ -217,7 +222,7 @@ extension REST {
 
         func replaceWireguardKey(token: String, oldPublicKey: PublicKey, newPublicKey: PublicKey, retryStrategy: REST.RetryStrategy, completionHandler: @escaping (OperationCompletion<WireguardAddressesResponse, REST.Error>) -> Void) -> Cancellable {
             return scheduleOperation(name: "replace-wireguard-key", retryStrategy: retryStrategy, completionHandler: completionHandler) { endpoint, finishOperation in
-                var request = self.createURLRequestWithEndpoint(endpoint: endpoint, method: .post, path: "replace-wireguard-key")
+                var request = self.requestFactory.createURLRequest(endpoint: endpoint, method: .post, path: "replace-wireguard-key")
                 let body = ReplaceWireguardKeyRequest(old: oldPublicKey.rawValue, new: newPublicKey.rawValue)
 
                 Self.setAuthenticationToken(token: token, request: &request)
@@ -251,7 +256,7 @@ extension REST {
                     .addingPercentEncoding(withAllowedCharacters: .alphanumerics)!
 
                 let path = "wireguard-keys/".appending(urlEncodedPublicKey)
-                var request = self.createURLRequestWithEndpoint(endpoint: endpoint, method: .delete, path: path)
+                var request = self.requestFactory.createURLRequest(endpoint: endpoint, method: .delete, path: path)
 
                 Self.setAuthenticationToken(token: token, request: &request)
 
@@ -274,7 +279,7 @@ extension REST {
 
         func createApplePayment(token: String, receiptString: Data, retryStrategy: REST.RetryStrategy, completionHandler: @escaping (OperationCompletion<CreateApplePaymentResponse, REST.Error>) -> Void) -> Cancellable {
             return scheduleOperation(name: "create-apple-payment", retryStrategy: retryStrategy, completionHandler: completionHandler) { endpoint, finishOperation in
-                var request = self.createURLRequestWithEndpoint(endpoint: endpoint, method: .post, path: "create-apple-payment")
+                var request = self.requestFactory.createURLRequest(endpoint: endpoint, method: .post, path: "create-apple-payment")
                 let body = CreateApplePaymentRequest(receiptString: receiptString)
 
                 Self.setAuthenticationToken(token: token, request: &request)
@@ -310,7 +315,7 @@ extension REST {
 
         func sendProblemReport(_ body: ProblemReportRequest, retryStrategy: REST.RetryStrategy, completionHandler: @escaping (OperationCompletion<(), REST.Error>) -> Void) -> Cancellable {
             return scheduleOperation(name: "send-problem-report", retryStrategy: retryStrategy, completionHandler: completionHandler) { endpoint, finishOperation in
-                var request = self.createURLRequestWithEndpoint(endpoint: endpoint, method: .post, path: "problem-report")
+                var request = self.requestFactory.createURLRequest(endpoint: endpoint, method: .post, path: "problem-report")
 
                 do {
                     try Self.setHTTPBody(value: body, request: &request)
@@ -378,27 +383,6 @@ extension REST {
                     }
                 }
             }
-        }
-
-        private func createURLRequestWithEndpoint(endpoint: AnyIPEndpoint, method: HTTPMethod, path: String) -> URLRequest {
-            var urlComponents = URLComponents()
-            urlComponents.scheme = "https"
-            urlComponents.path = apiBasePath
-            urlComponents.host = "\(endpoint.ip)"
-            urlComponents.port = Int(endpoint.port)
-
-            let requestURL = urlComponents.url!.appendingPathComponent(path)
-
-            var request = URLRequest(
-                url: requestURL,
-                cachePolicy: .useProtocolCachePolicy,
-                timeoutInterval: networkTimeout
-            )
-            request.httpShouldHandleCookies = false
-            request.addValue(apiHostname, forHTTPHeaderField: HTTPHeader.host)
-            request.addValue("application/json", forHTTPHeaderField: HTTPHeader.contentType)
-            request.httpMethod = method.rawValue
-            return request
         }
 
         /// Parse JSON response into the given `Decodable` type.
