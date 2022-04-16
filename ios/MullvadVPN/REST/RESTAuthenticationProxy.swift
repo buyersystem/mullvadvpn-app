@@ -15,7 +15,7 @@ extension REST {
         private let requestFactory = REST.RequestFactory(
             hostname: ApplicationConfiguration.defaultAPIHostname,
             pathPrefix: "/auth/v1-beta1",
-            networkTimeout: 10
+            networkTimeout: ApplicationConfiguration.defaultAPINetworkTimeout
         )
 
         private let operationQueue = OperationQueue()
