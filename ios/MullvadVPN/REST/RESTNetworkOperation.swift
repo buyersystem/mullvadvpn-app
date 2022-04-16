@@ -36,7 +36,15 @@ extension REST {
         private let logger = Logger(label: "REST.NetworkOperation")
         private let loggerMetadata: Logger.Metadata
 
-        init(taskIdentifier: UInt32, name: String, networkTaskGenerator: @escaping Generator, addressCacheStore: AddressCache.Store, retryStrategy: RetryStrategy, completionHandler: @escaping CompletionHandler) {
+        init(
+            taskIdentifier: UInt32,
+            name: String,
+            networkTaskGenerator: @escaping Generator,
+            addressCacheStore: AddressCache.Store,
+            retryStrategy: RetryStrategy,
+            completionHandler: @escaping CompletionHandler
+        )
+        {
             self.networkTaskGenerator = networkTaskGenerator
             self.addressCacheStore = addressCacheStore
             self.retryStrategy = retryStrategy
