@@ -70,7 +70,11 @@ extension REST {
 
         func createAccount(retryStrategy: REST.RetryStrategy, completionHandler: @escaping (OperationCompletion<AccountResponse, REST.Error>) -> Void) -> Cancellable {
             return scheduleOperation(name: "create-account", retryStrategy: retryStrategy, completionHandler: completionHandler) { endpoint, finishOperation in
-                let request = self.requestFactory.createURLRequest(endpoint: endpoint, method: .post, path: "accounts")
+                let request = self.requestFactory.createURLRequest(
+                    endpoint: endpoint,
+                    method: .post,
+                    path: "accounts"
+                )
 
                 let dataTask = self.dataTask(request: request) { responseResult in
                     let restResult = responseResult
@@ -92,7 +96,11 @@ extension REST {
 
         func getAddressList(retryStrategy: REST.RetryStrategy, completionHandler: @escaping (OperationCompletion<[AnyIPEndpoint], REST.Error>) -> Void) -> Cancellable {
             return scheduleOperation(name: "get-api-addrs", retryStrategy: retryStrategy, completionHandler: completionHandler) { endpoint, finishOperation in
-                let request = self.requestFactory.createURLRequest(endpoint: endpoint, method: .get, path: "api-addrs")
+                let request = self.requestFactory.createURLRequest(
+                    endpoint: endpoint,
+                    method: .get,
+                    path: "api-addrs"
+                )
 
                 let dataTask = self.dataTask(request: request) { responseResult in
                     let restResult = responseResult.mapError(Self.mapNetworkError)
@@ -113,11 +121,17 @@ extension REST {
 
         func getRelays(etag: String?, retryStrategy: REST.RetryStrategy, completionHandler: @escaping (OperationCompletion<ServerRelaysCacheResponse, REST.Error>) -> Void) -> Cancellable {
             return scheduleOperation(name: "get-relays", retryStrategy: retryStrategy, completionHandler: completionHandler) { endpoint, finishOperation in
-                var request = self.requestFactory.createURLRequest(endpoint: endpoint, method: .get, path: "relays")
+                var requestBuilder = self.requestFactory.createURLRequestBuilder(
+                    endpoint: endpoint,
+                    method: .get,
+                    path: "relays"
+                )
+
                 if let etag = etag {
-                    Self.setETagHeader(etag: etag, request: &request)
+                    requestBuilder.setETagHeader(etag: etag)
                 }
 
+                let request = requestBuilder.getURLRequest()
                 let dataTask = self.dataTask(request: request) { restResponse in
                     let restResult = restResponse.mapError(Self.mapNetworkError)
                         .flatMap { httpResponse, data -> Result<ServerRelaysCacheResponse, REST.Error> in
@@ -143,10 +157,15 @@ extension REST {
 
         func getAccountExpiry(token: String, retryStrategy: REST.RetryStrategy, completionHandler: @escaping (OperationCompletion<AccountResponse, REST.Error>) -> Void) -> Cancellable {
             return scheduleOperation(name: "get-account-expiry", retryStrategy: retryStrategy, completionHandler: completionHandler) { endpoint, finishOperation in
-                var request = self.requestFactory.createURLRequest(endpoint: endpoint, method: .get, path: "me")
+                var requestBuilder = self.requestFactory
+                    .createURLRequestBuilder(
+                        endpoint: endpoint,
+                        method: .get,
+                        path: "me"
+                    )
+                requestBuilder.setAuthorization(.accountNumber(token))
 
-                Self.setAuthenticationToken(token: token, request: &request)
-
+                let request = requestBuilder.getURLRequest()
                 let dataTask = self.dataTask(request: request) { restResponse in
                     let restResult = restResponse.mapError(Self.mapNetworkError)
                         .flatMap { httpResponse, data -> Result<AccountResponse, REST.Error> in
@@ -168,12 +187,17 @@ extension REST {
             return scheduleOperation(name: "get-wireguard-key", retryStrategy: retryStrategy, completionHandler: completionHandler) { endpoint, finishOperation in
                 let urlEncodedPublicKey = publicKey.base64Key
                     .addingPercentEncoding(withAllowedCharacters: .alphanumerics)!
-
                 let path = "wireguard-keys/".appending(urlEncodedPublicKey)
-                var request = self.requestFactory.createURLRequest(endpoint: endpoint, method: .get, path: path)
 
-                Self.setAuthenticationToken(token: token, request: &request)
+                var requestBuilder = self.requestFactory
+                    .createURLRequestBuilder(
+                        endpoint: endpoint,
+                        method: .get,
+                        path: path
+                    )
+                requestBuilder.setAuthorization(.accountNumber(token))
 
+                let request = requestBuilder.getURLRequest()
                 let dataTask = self.dataTask(request: request) { restResponse in
                     let restResult = restResponse.mapError(Self.mapNetworkError)
                         .flatMap { httpResponse, data -> Result<WireguardAddressesResponse, REST.Error> in
@@ -192,17 +216,23 @@ extension REST {
 
         func pushWireguardKey(token: String, publicKey: PublicKey, retryStrategy: REST.RetryStrategy, completionHandler: @escaping (OperationCompletion<WireguardAddressesResponse, REST.Error>) -> Void) -> Cancellable {
             return scheduleOperation(name: "push-wireguard-key", retryStrategy: retryStrategy, completionHandler: completionHandler) { endpoint, finishOperation in
-                var request = self.requestFactory.createURLRequest(endpoint: endpoint, method: .post, path: "wireguard-keys")
-                let body = PushWireguardKeyRequest(pubkey: publicKey.rawValue)
-
-                Self.setAuthenticationToken(token: token, request: &request)
+                var requestBuilder = self.requestFactory.createURLRequestBuilder(
+                    endpoint: endpoint,
+                    method: .post,
+                    path: "wireguard-keys"
+                )
+                requestBuilder.setAuthorization(.accountNumber(token))
 
                 do {
-                    try Self.setHTTPBody(value: body, request: &request)
+                    let body = PushWireguardKeyRequest(
+                        pubkey: publicKey.rawValue
+                    )
+                    try requestBuilder.setHTTPBody(value: body)
                 } catch {
                     return .failure(.encodePayload(error))
                 }
 
+                let request = requestBuilder.getURLRequest()
                 let dataTask = self.dataTask(request: request) { restResponse in
                     let restResult = restResponse.mapError(Self.mapNetworkError)
                         .flatMap { httpResponse, data -> Result<WireguardAddressesResponse, REST.Error> in
@@ -222,17 +252,24 @@ extension REST {
 
         func replaceWireguardKey(token: String, oldPublicKey: PublicKey, newPublicKey: PublicKey, retryStrategy: REST.RetryStrategy, completionHandler: @escaping (OperationCompletion<WireguardAddressesResponse, REST.Error>) -> Void) -> Cancellable {
             return scheduleOperation(name: "replace-wireguard-key", retryStrategy: retryStrategy, completionHandler: completionHandler) { endpoint, finishOperation in
-                var request = self.requestFactory.createURLRequest(endpoint: endpoint, method: .post, path: "replace-wireguard-key")
-                let body = ReplaceWireguardKeyRequest(old: oldPublicKey.rawValue, new: newPublicKey.rawValue)
-
-                Self.setAuthenticationToken(token: token, request: &request)
+                var requestBuilder = self.requestFactory.createURLRequestBuilder(
+                    endpoint: endpoint,
+                    method: .post,
+                    path: "replace-wireguard-key"
+                )
+                requestBuilder.setAuthorization(.accountNumber(token))
 
                 do {
-                    try Self.setHTTPBody(value: body, request: &request)
+                    let body = ReplaceWireguardKeyRequest(
+                        old: oldPublicKey.rawValue,
+                        new: newPublicKey.rawValue
+                    )
+                    try requestBuilder.setHTTPBody(value: body)
                 } catch {
                     return .failure(.encodePayload(error))
                 }
 
+                let request = requestBuilder.getURLRequest()
                 let dataTask = self.dataTask(request: request) { restResponse in
                     let restResult = restResponse.mapError(Self.mapNetworkError)
                         .flatMap { httpResponse, data -> Result<WireguardAddressesResponse, REST.Error> in
@@ -256,10 +293,15 @@ extension REST {
                     .addingPercentEncoding(withAllowedCharacters: .alphanumerics)!
 
                 let path = "wireguard-keys/".appending(urlEncodedPublicKey)
-                var request = self.requestFactory.createURLRequest(endpoint: endpoint, method: .delete, path: path)
+                var requestBuilder = self.requestFactory
+                    .createURLRequestBuilder(
+                        endpoint: endpoint,
+                        method: .delete,
+                        path: path
+                    )
+                requestBuilder.setAuthorization(.accountNumber(token))
 
-                Self.setAuthenticationToken(token: token, request: &request)
-
+                let request = requestBuilder.getURLRequest()
                 let dataTask = self.dataTask(request: request) { restResponse in
                     let restResult = restResponse.mapError(Self.mapNetworkError)
                         .flatMap { httpResponse, data -> Result<(), REST.Error> in
@@ -279,17 +321,22 @@ extension REST {
 
         func createApplePayment(token: String, receiptString: Data, retryStrategy: REST.RetryStrategy, completionHandler: @escaping (OperationCompletion<CreateApplePaymentResponse, REST.Error>) -> Void) -> Cancellable {
             return scheduleOperation(name: "create-apple-payment", retryStrategy: retryStrategy, completionHandler: completionHandler) { endpoint, finishOperation in
-                var request = self.requestFactory.createURLRequest(endpoint: endpoint, method: .post, path: "create-apple-payment")
-                let body = CreateApplePaymentRequest(receiptString: receiptString)
-
-                Self.setAuthenticationToken(token: token, request: &request)
+                var requestBuilder = self.requestFactory
+                    .createURLRequestBuilder(
+                        endpoint: endpoint,
+                        method: .post,
+                        path: "create-apple-payment"
+                    )
+                requestBuilder.setAuthorization(.accountNumber(token))
 
                 do {
-                    try Self.setHTTPBody(value: body, request: &request)
+                    let body = CreateApplePaymentRequest(receiptString: receiptString)
+                    try requestBuilder.setHTTPBody(value: body)
                 } catch {
                     return .failure(.encodePayload(error))
                 }
 
+                let request = requestBuilder.getURLRequest()
                 let dataTask = self.dataTask(request: request) { restResponse in
                     let restResult = restResponse.mapError(Self.mapNetworkError)
                         .flatMap { httpResponse, data -> Result<CreateApplePaymentResponse, REST.Error> in
@@ -315,14 +362,19 @@ extension REST {
 
         func sendProblemReport(_ body: ProblemReportRequest, retryStrategy: REST.RetryStrategy, completionHandler: @escaping (OperationCompletion<(), REST.Error>) -> Void) -> Cancellable {
             return scheduleOperation(name: "send-problem-report", retryStrategy: retryStrategy, completionHandler: completionHandler) { endpoint, finishOperation in
-                var request = self.requestFactory.createURLRequest(endpoint: endpoint, method: .post, path: "problem-report")
+                var requestBuilder = self.requestFactory.createURLRequestBuilder(
+                    endpoint: endpoint,
+                    method: .post,
+                    path: "problem-report"
+                )
 
                 do {
-                    try Self.setHTTPBody(value: body, request: &request)
+                    try requestBuilder.setHTTPBody(value: body)
                 } catch {
                     return .failure(.encodePayload(error))
                 }
 
+                let request = requestBuilder.getURLRequest()
                 let dataTask = self.dataTask(request: request) { restResponse in
                     let restResult = restResponse.mapError(Self.mapNetworkError)
                         .flatMap { httpResponse, data -> Result<(), REST.Error> in
@@ -411,23 +463,6 @@ extension REST {
 
         private static func mapNetworkError(_ error: URLError) -> REST.Error {
             return .network(error)
-        }
-
-        private static func setHTTPBody<T: Encodable>(value: T, request: inout URLRequest) throws {
-            request.httpBody = try REST.Coding.makeJSONEncoder().encode(value)
-        }
-
-        private static func setETagHeader(etag: String, request: inout URLRequest) {
-            var etag = etag
-            // Enforce weak validator to account for some backend caching quirks.
-            if etag.starts(with: "\"") {
-                etag.insert(contentsOf: "W/", at: etag.startIndex)
-            }
-            request.setValue(etag, forHTTPHeaderField: HTTPHeader.ifNoneMatch)
-        }
-
-        private static func setAuthenticationToken(token: String, request: inout URLRequest) {
-            request.addValue("Token \(token)", forHTTPHeaderField: HTTPHeader.authorization)
         }
     }
 

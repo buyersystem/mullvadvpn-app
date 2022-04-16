@@ -40,5 +40,57 @@ extension REST {
             request.httpMethod = method.rawValue
             return request
         }
+
+        func createURLRequestBuilder(
+            endpoint: AnyIPEndpoint,
+            method: HTTPMethod,
+            path: String
+        ) -> RequestBuilder {
+            let request = createURLRequest(
+                endpoint: endpoint,
+                method: method,
+                path: path
+            )
+
+            return RequestBuilder(request: request)
+        }
+    }
+
+    struct RequestBuilder {
+        private var request: URLRequest
+
+        init(request: URLRequest) {
+            self.request = request
+        }
+
+        mutating func setHTTPBody<T: Encodable>(value: T) throws {
+            request.httpBody = try REST.Coding.makeJSONEncoder().encode(value)
+        }
+
+        mutating func setETagHeader(etag: String) {
+            var etag = etag
+            // Enforce weak validator to account for some backend caching quirks.
+            if etag.starts(with: "\"") {
+                etag.insert(contentsOf: "W/", at: etag.startIndex)
+            }
+            request.setValue(etag, forHTTPHeaderField: HTTPHeader.ifNoneMatch)
+        }
+
+        mutating func setAuthorization(_ authorization: REST.Authorization) {
+            let value: String
+            switch authorization {
+            case .accountNumber(let accountNumber):
+                value = "Token \(accountNumber)"
+
+            case .accessToken(let accessToken):
+                value = "Bearer \(accessToken)"
+            }
+
+            request.addValue(value, forHTTPHeaderField: HTTPHeader.authorization)
+        }
+
+        func getURLRequest() -> URLRequest {
+            return request
+        }
     }
 }
