@@ -42,9 +42,6 @@ extension REST {
         /// Serial dispatch queue used by operations.
         private let dispatchQueue = DispatchQueue(label: "REST.Client.Queue")
 
-        /// Network task counter.
-        private var networkTaskCounter: UInt32 = 0
-
         /// Returns array of trusted root certificates
         private static var trustedRootCertificates: [SecCertificate] {
             let rootCertificate = Bundle.main.path(forResource: "le_root_cert", ofType: "cer")!
@@ -466,16 +463,6 @@ extension REST {
 
         // MARK: - Private
 
-        private func nextTaskIdentifier() -> UInt32 {
-            return dispatchQueue.sync {
-                let (partialValue, isOverflow) = networkTaskCounter.addingReportingOverflow(1)
-                let nextValue = isOverflow ? 1 : partialValue
-                networkTaskCounter = nextValue
-
-                return nextValue
-            }
-        }
-
         private func scheduleOperation<RequestHandler>(
             name: String,
             retryStrategy: REST.RetryStrategy,
@@ -484,8 +471,7 @@ extension REST {
         ) -> Cancellable where RequestHandler: RESTRequestHandler
         {
             let operation = NetworkOperation(
-                taskIdentifier: nextTaskIdentifier(),
-                name: name,
+                name: getTaskIdentifier(name: name),
                 dispatchQueue: dispatchQueue,
                 urlSession: session,
                 addressCacheStore: addressCacheStore,
