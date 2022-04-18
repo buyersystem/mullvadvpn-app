@@ -12,19 +12,19 @@ import class WireGuardKitTypes.PublicKey
 import struct WireGuardKitTypes.IPAddressRange
 
 extension REST {
-
     class Client {
         typealias CompletionHandler<Success> = (OperationCompletion<Success, REST.Error>) -> Void
 
+        /// Shared REST client.
         static let shared: Client = {
-            return Client(addressCacheStore: AddressCache.Store.shared)
+            return Client(
+                session: REST.sharedURLSession,
+                addressCacheStore: AddressCache.Store.shared
+            )
         }()
 
         /// URL session.
         private let session: URLSession
-
-        /// URL session delegate.
-        private let sessionDelegate: SSLPinningURLSessionDelegate
 
         /// Address cache store.
         private let addressCacheStore: AddressCache.Store
@@ -52,16 +52,8 @@ extension REST {
             }
         }
 
-        init(addressCacheStore: AddressCache.Store) {
-            sessionDelegate = SSLPinningURLSessionDelegate(
-                sslHostname: ApplicationConfiguration.defaultAPIHostname,
-                trustedRootCertificates: Self.trustedRootCertificates
-            )
-            session = URLSession(
-                configuration: .ephemeral,
-                delegate: sessionDelegate,
-                delegateQueue: nil
-            )
+        init(session: URLSession, addressCacheStore: AddressCache.Store) {
+            self.session = session
             self.addressCacheStore = addressCacheStore
         }
 
