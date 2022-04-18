@@ -16,16 +16,34 @@ extension REST {
         private let operationQueue = OperationQueue()
         private let dispatchQueue = DispatchQueue(label: "REST.AccessTokenManager.dispatchQueue")
         private let proxy: AuthenticationProxy
-        private var tokens: [String: AccessTokenData] = [:]
+        private var tokens = [AccessToken]()
 
         init(authenticationProxy: AuthenticationProxy) {
             proxy = authenticationProxy
             operationQueue.maxConcurrentOperationCount = 1
         }
 
+        func getAuthorization(
+            accessToken: REST.AccessToken,
+            completionHandler: @escaping (OperationCompletion<REST.Authorization, REST.AccessTokenManager.Error>) -> Void
+        ) -> Cancellable
+        {
+            let operation = GetAuthorizationOperation(
+                dispatchQueue: dispatchQueue,
+                proxy: proxy,
+                accessToken: accessToken,
+                completionQueue: .main,
+                completionHandler: completionHandler
+            )
+
+            operationQueue.addOperation(operation)
+
+            return operation
+        }
+
         func getAccessToken(
             accountNumber: String,
-            completionHandler: @escaping (OperationCompletion<AccessTokenData, REST.Error>) -> Void
+            completionHandler: @escaping (OperationCompletion<REST.AccessToken, REST.AccessTokenManager.Error>) -> Void
         ) -> Cancellable
         {
             let operation = GetAccessTokenOperation(
@@ -42,28 +60,134 @@ extension REST {
             return operation
         }
 
-        fileprivate func getAccessTokenData(accountNumber: String) -> REST.AccessTokenData? {
+        fileprivate func getAccessToken(accountNumber: String) -> REST.AccessToken? {
             dispatchPrecondition(condition: .onQueue(dispatchQueue))
 
-            return tokens[accountNumber]
+            return tokens.first { token in
+                return token.accountNumber == accountNumber
+            }
         }
 
-        fileprivate func setAccessTokenData(accountNumber: String, tokenData: REST.AccessTokenData) {
+        fileprivate func addAccessToken(accessToken: REST.AccessToken) {
             dispatchPrecondition(condition: .onQueue(dispatchQueue))
 
-            tokens[accountNumber] = tokenData
+            let index = tokens.firstIndex { token in
+                return token.accountNumber == accessToken.accountNumber
+            }
+
+            if let index = index {
+                tokens[index] = accessToken
+            } else {
+                tokens.append(accessToken)
+            }
+        }
+    }
+
+    final class AccessToken {
+        fileprivate let accountNumber: String
+        fileprivate var value: String
+        fileprivate var expiry: Date
+
+        fileprivate init(accountNumber: String, data: AccessTokenData) {
+            self.accountNumber = accountNumber
+            self.value = data.accessToken
+            self.expiry = data.expiry
+        }
+
+        fileprivate func update(_ data: AccessTokenData) {
+            value = data.accessToken
+            expiry = data.expiry
         }
     }
 
 }
 
 fileprivate protocol RESTAccessTokenStore {
-    func getAccessTokenData(accountNumber: String) -> REST.AccessTokenData?
-    func setAccessTokenData(accountNumber: String, tokenData: REST.AccessTokenData)
+    func getAccessToken(accountNumber: String) -> REST.AccessToken?
+    func addAccessToken(accessToken: REST.AccessToken)
 }
 
 extension REST {
-    fileprivate class GetAccessTokenOperation: ResultOperation<AccessTokenData, REST.Error> {
+    fileprivate class GetAuthorizationOperation: ResultOperation<REST.Authorization, REST.AccessTokenManager.Error> {
+        private let dispatchQueue: DispatchQueue
+        private let proxy: AuthenticationProxy
+        private let accessToken: AccessToken
+        private let logger = Logger(label: "REST.GetAuthorizationOperation")
+        private var proxyTask: Cancellable?
+
+        init(
+            dispatchQueue: DispatchQueue,
+            proxy: AuthenticationProxy,
+            accessToken: AccessToken,
+            completionQueue: DispatchQueue?,
+            completionHandler: CompletionHandler?
+        )
+        {
+            self.dispatchQueue = dispatchQueue
+            self.proxy = proxy
+            self.accessToken = accessToken
+
+            super.init(
+                completionQueue: completionQueue,
+                completionHandler: completionHandler
+            )
+        }
+
+        override func main() {
+            dispatchQueue.async {
+                guard !self.isCancelled else {
+                    self.finish(completion: .cancelled)
+                    return
+                }
+
+                guard self.accessToken.expiry > Date() else {
+                    self.refreshAccessToken()
+                    return
+                }
+
+                self.finish(completion: .success(.accessToken(self.accessToken.value)))
+            }
+        }
+
+        override func cancel() {
+            super.cancel()
+
+            dispatchQueue.async {
+                self.proxyTask?.cancel()
+                self.proxyTask = nil
+            }
+        }
+
+        private func refreshAccessToken() {
+            proxyTask = proxy.refreshAccessToken(accessToken: accessToken.value) { completion in
+                self.dispatchQueue.async {
+                    switch completion {
+                    case .success(let tokenData):
+                        self.accessToken.update(tokenData)
+
+                    case .failure(let error):
+                        self.logger.error(
+                            chainedError: error,
+                            message: "Failed to refresh access token."
+                        )
+
+                    case .cancelled:
+                        break
+                    }
+
+                    let mappedCompletion = completion.map { tokenData -> REST.Authorization in
+                        return .accessToken(tokenData.accessToken)
+                    }.mapError { error -> AccessTokenManager.Error in
+                        return .refreshToken(error)
+                    }
+
+                    self.finish(completion: mappedCompletion)
+                }
+            }
+        }
+    }
+
+    fileprivate class GetAccessTokenOperation: ResultOperation<AccessToken, REST.AccessTokenManager.Error> {
         private let dispatchQueue: DispatchQueue
         private let proxy: AuthenticationProxy
         private let store: RESTAccessTokenStore
@@ -98,17 +222,17 @@ extension REST {
                     return
                 }
 
-                guard let tokenData = self.store.getAccessTokenData(accountNumber: self.accountNumber) else {
+                guard let accessToken = self.store.getAccessToken(accountNumber: self.accountNumber) else {
                     self.obtainAccessToken()
                     return
                 }
 
-                guard tokenData.expiry > Date() else {
-                    self.refreshAccessToken(tokenData.accessToken)
+                guard accessToken.expiry > Date() else {
+                    self.refreshAccessToken(accessToken)
                     return
                 }
 
-                self.finish(completion: .success(tokenData))
+                self.finish(completion: .success(accessToken))
             }
         }
 
@@ -124,44 +248,68 @@ extension REST {
         private func obtainAccessToken() {
             proxyTask = proxy.getAccessToken(accountNumber: accountNumber) { completion in
                 self.dispatchQueue.async {
-                    switch completion {
-                    case .success(let tokenData):
-                        self.store.setAccessTokenData(accountNumber: self.accountNumber, tokenData: tokenData)
+                    let mappedCompletion = completion
+                        .map{ tokenData -> AccessToken in
+                            let newToken = AccessToken(
+                                accountNumber: self.accountNumber,
+                                data: tokenData
+                            )
 
-                    case .failure(let error):
-                        self.logger.error(
-                            chainedError: error,
-                            message: "Failed to obtain access token."
-                        )
+                            self.store.addAccessToken(accessToken: newToken)
 
-                    case .cancelled:
-                        break
-                    }
+                            return newToken
+                        }
+                        .mapError { error -> REST.AccessTokenManager.Error in
+                            self.logger.error(
+                                chainedError: error,
+                                message: "Failed to obtain access token."
+                            )
 
-                    self.finish(completion: completion)
+                            return .obtainToken(error)
+                        }
+
+                    self.finish(completion: mappedCompletion)
                 }
             }
         }
 
-        private func refreshAccessToken(_ accessToken: String) {
-            proxyTask = proxy.refreshAccessToken(accessToken: accessToken) { completion in
+        private func refreshAccessToken(_ accessToken: AccessToken) {
+            proxyTask = proxy.refreshAccessToken(accessToken: accessToken.value) { completion in
                 self.dispatchQueue.async {
-                    switch completion {
-                    case .success(let tokenData):
-                        self.store.setAccessTokenData(accountNumber: self.accountNumber, tokenData: tokenData)
+                    let mappedCompletion = completion
+                        .map { tokenData -> AccessToken in
+                            accessToken.update(tokenData)
 
-                    case .failure(let error):
-                        self.logger.error(
-                            chainedError: error,
-                            message: "Failed to refresh access token."
-                        )
+                            return accessToken
+                        }
+                        .mapError { error -> REST.AccessTokenManager.Error in
+                            self.logger.error(
+                                chainedError: error,
+                                message: "Failed to refresh access token."
+                            )
 
-                    case .cancelled:
-                        break
-                    }
+                            return .refreshToken(error)
+                        }
 
-                    self.finish(completion: completion)
+                    self.finish(completion: mappedCompletion)
                 }
+            }
+        }
+    }
+}
+
+
+extension REST.AccessTokenManager {
+    enum Error: ChainedError {
+        case obtainToken(REST.Error)
+        case refreshToken(REST.Error)
+
+        var errorDescription: String? {
+            switch self {
+            case .obtainToken:
+                return "Failure to obtain access token."
+            case .refreshToken:
+                return "Failure to refresh access token."
             }
         }
     }
