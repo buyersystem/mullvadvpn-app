@@ -20,26 +20,37 @@ extension REST {
 
         private let operationQueue = OperationQueue()
         private let dispatchQueue = DispatchQueue(label: "REST.AccountsProxy.Queue")
+
         private let session: URLSession
         private let addressCacheStore: AddressCache.Store
+        private let accessTokenManager: AccessTokenManager
 
-        init(session: URLSession, addressCacheStore: AddressCache.Store) {
+        init(session: URLSession, addressCacheStore: AddressCache.Store, accessTokenManager: REST.AccessTokenManager) {
             self.session = session
             self.addressCacheStore = addressCacheStore
+            self.accessTokenManager = accessTokenManager
         }
 
-        func getMyAccount(completion: @escaping CompletionHandler<BetaAccountResponse>) -> Cancellable {
+        func getMyAccount(accessToken: REST.AccessToken, completion: @escaping CompletionHandler<BetaAccountResponse>) -> Cancellable {
             let requestHandler = AnyRequestHandler(
                 createURLRequest: { endpoint, completion in
-                    let requestBuilder = self.requestFactory.createURLRequestBuilder(
+                    var requestBuilder = self.requestFactory.createURLRequestBuilder(
                         endpoint: endpoint,
                         method: .post,
                         path: "/accounts/me"
                     )
 
-                    // TODO: Add account token into header!
+                    let task = self.accessTokenManager.getAuthorization(accessToken: accessToken) { authorizationCompletion in
+                        if let authorization = authorizationCompletion.value {
+                            requestBuilder.setAuthorization(authorization)
+                        }
 
-                    completion(.success(requestBuilder.getURLRequest()))
+                        // TODO: handle cancellation
+
+                        completion(.success(requestBuilder.getURLRequest()))
+                    }
+
+                    // TODO: do something with task
                 },
                 handleURLResponse: { response, data -> Result<BetaAccountResponse, REST.Error> in
                     if HTTPStatus.isSuccess(response.statusCode) {
