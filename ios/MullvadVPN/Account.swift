@@ -135,7 +135,7 @@ class Account {
     /// application preferences.
     func login(accountToken: String, completionHandler: @escaping (Result<REST.AccountResponse, Account.Error>) -> Void) {
         let operation = AsyncBlockOperation { operation in
-            _ = REST.Client.shared.getAccountExpiry(token: accountToken, retryStrategy: .default) { result in
+            _ = REST.Client.shared.getAccountExpiry(accountNumber: accountToken, retryStrategy: .default) { result in
                 switch result {
                 case .success(let response):
                     self.setupTunnel(accountToken: response.token, expiry: response.expires) { error in
@@ -206,7 +206,7 @@ class Account {
                     return
                 }
 
-                _ = REST.Client.shared.getAccountExpiry(token: token, retryStrategy: .default) { completion in
+                _ = REST.Client.shared.getAccountExpiry(accountNumber: token, retryStrategy: .default) { completion in
                     switch completion {
                     case .success(let response):
                         if self.expiry != response.expires {

@@ -12,42 +12,47 @@ import Logging
 protocol RESTRequestHandler {
     associatedtype Success
 
-    func createURLRequest(endpoint: AnyIPEndpoint, completionHandler: @escaping (Result<URLRequest, REST.Error>) -> Void)
+    func createURLRequest(endpoint: AnyIPEndpoint) -> Result<URLRequest, REST.Error>
     func handleURLResponse(_ response: HTTPURLResponse, data: Data) -> Result<Success, REST.Error>
+    func getAuthorizationProvider() -> RESTAuthorizationProvider?
 }
 
 extension REST {
     class AnyRequestHandler<Success>: RESTRequestHandler {
-        typealias CreateURLRequestBlock = (AnyIPEndpoint, @escaping (Result<URLRequest, REST.Error>) -> Void) -> Void
-        typealias CreateURLRequestNonFallibleBlock = (AnyIPEndpoint) -> URLRequest
+        typealias CreateURLRequestBlock = (AnyIPEndpoint) -> Result<URLRequest, REST.Error>
         typealias HandleURLResponseBlock = (HTTPURLResponse, Data) -> Result<Success, REST.Error>
+        typealias GetAuthorizationProviderBlock = () -> RESTAuthorizationProvider?
 
         private let _createURLRequest: CreateURLRequestBlock
         private let _handleURLResponse: HandleURLResponseBlock
+        private let _getAuthorizationProvider: GetAuthorizationProviderBlock?
 
         init<T>(_ handler: T) where T: RESTRequestHandler, T.Success == Success {
             _createURLRequest = handler.createURLRequest
             _handleURLResponse = handler.handleURLResponse
+            _getAuthorizationProvider = handler.getAuthorizationProvider
         }
 
-        init(createURLRequest: @escaping CreateURLRequestBlock, handleURLResponse: @escaping HandleURLResponseBlock) {
+        init(
+            createURLRequest: @escaping CreateURLRequestBlock,
+            handleURLResponse: @escaping HandleURLResponseBlock,
+            getAuthorizationProvider: GetAuthorizationProviderBlock? = nil
+        ) {
             _createURLRequest = createURLRequest
             _handleURLResponse = handleURLResponse
+            _getAuthorizationProvider = getAuthorizationProvider
         }
 
-        init(createURLRequest: @escaping CreateURLRequestNonFallibleBlock, handleURLResponse: @escaping HandleURLResponseBlock) {
-            _createURLRequest = { endpoint, completion in
-                completion(.success(createURLRequest(endpoint)))
-            }
-            _handleURLResponse = handleURLResponse
-        }
-
-        func createURLRequest(endpoint: AnyIPEndpoint, completionHandler: @escaping (Result<URLRequest, REST.Error>) -> Void) {
-            _createURLRequest(endpoint, completionHandler)
+        func createURLRequest(endpoint: AnyIPEndpoint) -> Result<URLRequest, REST.Error> {
+            return _createURLRequest(endpoint)
         }
 
         func handleURLResponse(_ response: HTTPURLResponse, data: Data) -> Result<Success, REST.Error> {
             return _handleURLResponse(response, data)
+        }
+
+        func getAuthorizationProvider() -> RESTAuthorizationProvider? {
+            return _getAuthorizationProvider?()
         }
     }
 
@@ -58,6 +63,7 @@ extension REST {
         private let addressCacheStore: AddressCache.Store
 
         private var task: URLSessionTask?
+        private var authorizationTask: Cancellable?
 
         private let retryStrategy: RetryStrategy
         private var retryTimer: DispatchSourceTimer?
@@ -94,6 +100,9 @@ extension REST {
                 self.retryTimer?.cancel()
                 self.task?.cancel()
 
+                self.authorizationTask?.cancel()
+                self.authorizationTask = nil
+
                 self.retryTimer = nil
                 self.task = nil
             }
@@ -110,9 +119,30 @@ extension REST {
         private func sendRequest(endpoint: AnyIPEndpoint) {
             dispatchPrecondition(condition: .onQueue(dispatchQueue))
 
-            requestHandler.createURLRequest(endpoint: endpoint) { [weak self] result in
-                guard let self = self else { return }
+            guard !isCancelled else {
+                finish(completion: .cancelled)
+                return
+            }
 
+            let result = requestHandler.createURLRequest(endpoint: endpoint)
+            let request: URLRequest
+            switch result {
+            case .success(let anURLRequest):
+                request = anURLRequest
+
+            case .failure(let error):
+                didFailToCreateURLRequest(error)
+                return
+            }
+
+            guard let authorizationProvider = requestHandler.getAuthorizationProvider() else {
+                didReceiveURLRequest(request, endpoint: endpoint)
+                return
+            }
+
+            authorizationTask = authorizationProvider.getAuthorization { [weak self] result in
+                guard let self = self else { return }
+                
                 self.dispatchQueue.async {
                     guard !self.isCancelled else {
                         self.finish(completion: .cancelled)
@@ -120,14 +150,36 @@ extension REST {
                     }
 
                     switch result {
-                    case .success(let urlRequest):
-                        self.didReceiveURLRequest(urlRequest, endpoint: endpoint)
+                    case .success(let authorization):
+                        self.didReceiveAuthorization(
+                            authorization,
+                            request: request,
+                            endpoint: endpoint
+                        )
 
                     case .failure(let error):
-                        self.didFailToCreateURLRequest(error)
+                        self.didFailToObtainAuthorization(error)
+
+                    case .cancelled:
+                        self.finish(completion: .cancelled)
                     }
                 }
             }
+        }
+
+        private func didReceiveAuthorization(_ authorization: REST.Authorization, request: URLRequest, endpoint: AnyIPEndpoint) {
+            var requestBuilder = REST.RequestBuilder(request: request)
+            requestBuilder.setAuthorization(authorization)
+
+            didReceiveURLRequest(requestBuilder.getURLRequest(), endpoint: endpoint)
+        }
+
+        private func didFailToObtainAuthorization(_ error: REST.Error) {
+            dispatchPrecondition(condition: .onQueue(dispatchQueue))
+
+            logger.error(chainedError: error, message: "Failed to obtain authorization.", metadata: loggerMetadata)
+
+            finish(completion: .failure(error))
         }
 
         private func didReceiveURLRequest(_ urlRequest: URLRequest, endpoint: AnyIPEndpoint) {
