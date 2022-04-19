@@ -32,7 +32,7 @@ extension REST {
             let request = NewAccessTokenRequest(accountNumber: accountNumber)
 
             let requestHandler = AnyRequestHandler(
-                createURLRequest: { endpoint, completion in
+                createURLRequest: { endpoint in
                     var requestBuilder = self.requestFactory.createURLRequestBuilder(
                         endpoint: endpoint,
                         method: .post,
@@ -42,9 +42,9 @@ extension REST {
                     do {
                         try requestBuilder.setHTTPBody(value: request)
 
-                        completion(.success(requestBuilder.getURLRequest()))
+                        return .success(requestBuilder.getURLRequest())
                     } catch {
-                        completion(.failure(.encodePayload(error)))
+                        return .failure(.encodePayload(error))
                     }
                 },
                 handleURLResponse: { response, data -> Result<AccessTokenData, REST.Error> in
@@ -58,42 +58,6 @@ extension REST {
 
             return scheduleOperation(
                 name: "get-access-token",
-                retryStrategy: .default,
-                requestHandler: requestHandler,
-                completionHandler: completion
-            )
-        }
-
-        func refreshAccessToken(accessToken: String, completion: @escaping CompletionHandler<AccessTokenData>) -> Cancellable {
-            let request = RefreshAccessTokenRequest(authorizationCode: accessToken)
-
-            let requestHandler = AnyRequestHandler(
-                createURLRequest: { endpoint, completion in
-                    var requestBuilder = self.requestFactory.createURLRequestBuilder(
-                        endpoint: endpoint,
-                        method: .post,
-                        path: "/token"
-                    )
-
-                    do {
-                        try requestBuilder.setHTTPBody(value: request)
-
-                        completion(.success(requestBuilder.getURLRequest()))
-                    } catch {
-                        completion(.failure(.encodePayload(error)))
-                    }
-                },
-                handleURLResponse: { response, data -> Result<AccessTokenData, REST.Error> in
-                    if HTTPStatus.isSuccess(response.statusCode) {
-                        return ResponseHandling.decodeSuccessResponse(AccessTokenData.self, from: data)
-                    } else {
-                        return ResponseHandling.decodeErrorResponseAndMapToServerError(from: data)
-                    }
-                }
-            )
-
-            return scheduleOperation(
-                name: "refresh-access-token",
                 retryStrategy: .default,
                 requestHandler: requestHandler,
                 completionHandler: completion
@@ -132,9 +96,5 @@ extension REST {
 
     fileprivate struct NewAccessTokenRequest: Encodable {
         let accountNumber: String
-    }
-
-    fileprivate struct RefreshAccessTokenRequest: Encodable {
-        let authorizationCode: String
     }
 }

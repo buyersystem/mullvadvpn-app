@@ -115,7 +115,7 @@ class AppStorePaymentManager: NSObject, SKPaymentTransactionObserver {
         }
 
         // Validate account token before adding new payment to the queue.
-        cancellableTask = REST.Client.shared.getAccountExpiry(token: accountToken, retryStrategy: .default) { result in
+        cancellableTask = REST.Client.shared.getAccountExpiry(accountNumber: accountToken, retryStrategy: .default) { result in
             dispatchPrecondition(condition: .onQueue(.main))
 
             switch result {

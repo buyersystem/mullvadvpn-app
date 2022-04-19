@@ -31,26 +31,15 @@ extension REST {
             self.accessTokenManager = accessTokenManager
         }
 
-        func getMyAccount(accessToken: REST.AccessToken, completion: @escaping CompletionHandler<BetaAccountResponse>) -> Cancellable {
+        func getMyAccount(accountNumber: String, completion: @escaping CompletionHandler<BetaAccountResponse>) -> Cancellable {
             let requestHandler = AnyRequestHandler(
-                createURLRequest: { endpoint, completion in
-                    var requestBuilder = self.requestFactory.createURLRequestBuilder(
+                createURLRequest: { endpoint in
+                    let request = self.requestFactory.createURLRequest(
                         endpoint: endpoint,
                         method: .post,
                         path: "/accounts/me"
                     )
-
-                    let task = self.accessTokenManager.getAuthorization(accessToken: accessToken) { authorizationCompletion in
-                        if let authorization = authorizationCompletion.value {
-                            requestBuilder.setAuthorization(authorization)
-                        }
-
-                        // TODO: handle cancellation
-
-                        completion(.success(requestBuilder.getURLRequest()))
-                    }
-
-                    // TODO: do something with task
+                    return .success(request)
                 },
                 handleURLResponse: { response, data -> Result<BetaAccountResponse, REST.Error> in
                     if HTTPStatus.isSuccess(response.statusCode) {
