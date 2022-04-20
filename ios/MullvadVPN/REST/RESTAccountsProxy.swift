@@ -20,15 +20,10 @@ extension REST {
 
         private let operationQueue = OperationQueue()
         private let dispatchQueue = DispatchQueue(label: "REST.AccountsProxy.Queue")
+        private let configuration: AuthProxyConfiguration
 
-        private let session: URLSession
-        private let addressCacheStore: AddressCache.Store
-        private let accessTokenManager: AccessTokenManager
-
-        init(session: URLSession, addressCacheStore: AddressCache.Store, accessTokenManager: REST.AccessTokenManager) {
-            self.session = session
-            self.addressCacheStore = addressCacheStore
-            self.accessTokenManager = accessTokenManager
+        init(configuration: AuthProxyConfiguration) {
+            self.configuration = configuration
         }
 
         func getMyAccount(accountNumber: String, completion: @escaping CompletionHandler<BetaAccountResponse>) -> Cancellable {
@@ -70,8 +65,7 @@ extension REST {
             let operation = NetworkOperation(
                 name: getTaskIdentifier(name: name),
                 dispatchQueue: dispatchQueue,
-                urlSession: session,
-                addressCacheStore: addressCacheStore,
+                configuration: configuration,
                 retryStrategy: retryStrategy,
                 requestHandler: requestHandler,
                 completionHandler: completionHandler

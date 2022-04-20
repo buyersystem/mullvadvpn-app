@@ -15,11 +15,7 @@ extension REST {
     class APIProxy {
         typealias CompletionHandler<Success> = (OperationCompletion<Success, REST.Error>) -> Void
 
-        /// URL session.
-        private let session: URLSession
-
-        /// Address cache store.
-        private let addressCacheStore: AddressCache.Store
+        private let configuration: ProxyConfiguration
 
         /// REST request factory.
         private let requestFactory = REST.RequestFactory(
@@ -34,9 +30,8 @@ extension REST {
         /// Serial dispatch queue used by operations.
         private let dispatchQueue = DispatchQueue(label: "REST.APIProxy.Queue")
 
-        init(session: URLSession, addressCacheStore: AddressCache.Store) {
-            self.session = session
-            self.addressCacheStore = addressCacheStore
+        init(configuration: ProxyConfiguration) {
+            self.configuration = configuration
         }
 
         // MARK: - Public
@@ -447,8 +442,7 @@ extension REST {
             let operation = NetworkOperation(
                 name: getTaskIdentifier(name: name),
                 dispatchQueue: dispatchQueue,
-                urlSession: session,
-                addressCacheStore: addressCacheStore,
+                configuration: configuration,
                 retryStrategy: retryStrategy,
                 requestHandler: requestHandler,
                 completionHandler: completionHandler
