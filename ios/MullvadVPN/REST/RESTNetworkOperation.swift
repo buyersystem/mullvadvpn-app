@@ -141,15 +141,19 @@ extension REST {
             logger.debug("Executing request using \(endpoint).", metadata: loggerMetadata)
 
             task = self.urlSession.dataTask(with: urlRequest) { [weak self] data, response, error in
-                if let error = error {
-                    let urlError = error as! URLError
+                guard let self = self else { return }
 
-                    self?.didReceiveURLError(urlError, endpoint: endpoint)
-                } else {
-                    let httpResponse = response as! HTTPURLResponse
-                    let data = data ?? Data()
+                self.dispatchQueue.async {
+                    if let error = error {
+                        let urlError = error as! URLError
 
-                    self?.didReceiveURLResponse(httpResponse, data: data, endpoint: endpoint)
+                        self.didReceiveURLError(urlError, endpoint: endpoint)
+                    } else {
+                        let httpResponse = response as! HTTPURLResponse
+                        let data = data ?? Data()
+
+                        self.didReceiveURLResponse(httpResponse, data: data, endpoint: endpoint)
+                    }
                 }
             }
 
