@@ -8,11 +8,11 @@
 
 import Foundation
 import Logging
-import UIKit
 
 extension REST {
 
-    final class AccessTokenManager: RESTAccessTokenStore {
+    final class AccessTokenManager {
+        private let logger = Logger(label: "REST.AccessTokenManager")
         private let operationQueue = OperationQueue()
         private let dispatchQueue = DispatchQueue(label: "REST.AccessTokenManager.dispatchQueue")
         private let proxy: AuthenticationProxy
@@ -21,6 +21,7 @@ extension REST {
         init(authenticationProxy: AuthenticationProxy) {
             operationQueue.name = "REST.AccessTokenManager.operationQueue"
             operationQueue.maxConcurrentOperationCount = 1
+            operationQueue.underlyingQueue = dispatchQueue
             proxy = authenticationProxy
         }
 
@@ -29,115 +30,43 @@ extension REST {
             completionHandler: @escaping (OperationCompletion<REST.AccessTokenData, REST.Error>) -> Void
         ) -> Cancellable
         {
-            let operation = GetAccessTokenOperation(
-                dispatchQueue: dispatchQueue,
-                proxy: proxy,
-                store: self,
-                accountNumber: accountNumber,
-                completionQueue: .main,
-                completionHandler: completionHandler
-            )
+            let operation = ResultBlockOperation<REST.AccessTokenData, REST.Error> { operation in
+                if let tokenData = self.tokens[accountNumber], tokenData.expiry > Date() {
+                    operation.finish(completion: .success(tokenData))
+                    return
+                }
+
+                let task = self.proxy.getAccessToken(accountNumber: accountNumber) { completion in
+                    self.dispatchQueue.async {
+                        switch completion {
+                        case .success(let tokenData):
+                            self.tokens[accountNumber] = tokenData
+
+                        case .failure(let error):
+                            self.logger.error(chainedError: error, message: "Failed to fetch access token.")
+
+                        case .cancelled:
+                            break
+                        }
+
+                        operation.finish(completion: completion)
+                    }
+                }
+
+                operation.addCancellationBlock {
+                    task.cancel()
+                }
+            }
+
+            operation.completionQueue = .main
+            operation.completionHandler = { completion in
+                completionHandler(completion)
+            }
 
             operationQueue.addOperation(operation)
 
             return operation
         }
-
-        fileprivate func getTokenData(accountNumber: String) -> REST.AccessTokenData? {
-            dispatchPrecondition(condition: .onQueue(dispatchQueue))
-
-            return tokens[accountNumber]
-        }
-
-        fileprivate func setTokenData(accountNumber: String, tokenData: REST.AccessTokenData) {
-            dispatchPrecondition(condition: .onQueue(dispatchQueue))
-
-            tokens[accountNumber] = tokenData
-        }
     }
 
-}
-
-fileprivate protocol RESTAccessTokenStore {
-    func getTokenData(accountNumber: String) -> REST.AccessTokenData?
-    func setTokenData(accountNumber: String, tokenData: REST.AccessTokenData)
-}
-
-extension REST {
-    fileprivate class GetAccessTokenOperation: ResultOperation<REST.AccessTokenData, REST.Error> {
-        private let logger = Logger(label: "REST.GetAccessTokenOperation")
-        private let dispatchQueue: DispatchQueue
-        private let proxy: AuthenticationProxy
-        private let store: RESTAccessTokenStore
-        private let accountNumber: String
-        private var proxyTask: Cancellable?
-
-        init(
-            dispatchQueue: DispatchQueue,
-            proxy: AuthenticationProxy,
-            store: RESTAccessTokenStore,
-            accountNumber: String,
-            completionQueue: DispatchQueue?,
-            completionHandler: CompletionHandler?
-        )
-        {
-            self.dispatchQueue = dispatchQueue
-            self.proxy = proxy
-            self.store = store
-            self.accountNumber = accountNumber
-
-            super.init(
-                completionQueue: completionQueue,
-                completionHandler: completionHandler
-            )
-        }
-
-        override func main() {
-            dispatchQueue.async {
-                guard !self.isCancelled else {
-                    self.finish(completion: .cancelled)
-                    return
-                }
-
-                guard let tokenData = self.store.getTokenData(accountNumber: self.accountNumber),
-                      tokenData.expiry > Date() else {
-                          self.obtainAccessToken()
-                          return
-                      }
-
-                self.finish(completion: .success(tokenData))
-            }
-        }
-
-        override func cancel() {
-            super.cancel()
-
-            dispatchQueue.async {
-                self.proxyTask?.cancel()
-                self.proxyTask = nil
-            }
-        }
-
-        private func obtainAccessToken() {
-            proxyTask = proxy.getAccessToken(accountNumber: accountNumber) { completion in
-                self.dispatchQueue.async {
-                    switch completion {
-                    case .success(let tokenData):
-                        self.store.setTokenData(accountNumber: self.accountNumber, tokenData: tokenData)
-
-                    case .failure(let error):
-                        self.logger.error(
-                            chainedError: error,
-                            message: "Failed to obtain access token."
-                        )
-
-                    case .cancelled:
-                        break
-                    }
-
-                    self.finish(completion: completion)
-                }
-            }
-        }
-    }
 }
