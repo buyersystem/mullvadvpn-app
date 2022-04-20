@@ -34,16 +34,6 @@ extension REST {
         /// Serial dispatch queue used by operations.
         private let dispatchQueue = DispatchQueue(label: "REST.Client.Queue")
 
-        /// Returns array of trusted root certificates
-        private static var trustedRootCertificates: [SecCertificate] {
-            let rootCertificate = Bundle.main.path(forResource: "le_root_cert", ofType: "cer")!
-
-            return [rootCertificate].map { (path) -> SecCertificate in
-                let data = FileManager.default.contents(atPath: path)!
-                return SecCertificateCreateWithData(nil, data as CFData)!
-            }
-        }
-
         init(session: URLSession, addressCacheStore: AddressCache.Store) {
             self.session = session
             self.addressCacheStore = addressCacheStore
