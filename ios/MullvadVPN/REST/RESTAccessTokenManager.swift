@@ -19,8 +19,9 @@ extension REST {
         private var tokens = [String: AccessTokenData]()
 
         init(authenticationProxy: AuthenticationProxy) {
-            proxy = authenticationProxy
+            operationQueue.name = "REST.AccessTokenManager.operationQueue"
             operationQueue.maxConcurrentOperationCount = 1
+            proxy = authenticationProxy
         }
 
         func getAccessToken(
