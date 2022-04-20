@@ -55,12 +55,12 @@ extension REST {
 
         // MARK: - Private
 
-        private func scheduleOperation<RequestHandler>(
+        private func scheduleOperation<Success>(
             name: String,
             retryStrategy: REST.RetryStrategy,
-            requestHandler: RequestHandler,
-            completionHandler: @escaping NetworkOperation<RequestHandler.Success>.CompletionHandler
-        ) -> Cancellable where RequestHandler: RESTRequestHandler
+            requestHandler: AnyRequestHandler<Success>,
+            completionHandler: @escaping NetworkOperation<Success>.CompletionHandler
+        ) -> Cancellable
         {
             let operation = NetworkOperation(
                 name: getTaskIdentifier(name: name),

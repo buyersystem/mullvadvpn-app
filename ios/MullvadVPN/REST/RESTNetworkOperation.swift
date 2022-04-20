@@ -26,20 +26,20 @@ extension REST {
         private let logger = Logger(label: "REST.NetworkOperation")
         private let loggerMetadata: Logger.Metadata
 
-        init<T>(
+        init(
             name: String,
             dispatchQueue: DispatchQueue,
             configuration: ProxyConfiguration,
             retryStrategy: RetryStrategy,
-            requestHandler: T,
+            requestHandler: AnyRequestHandler<Success>,
             completionHandler: @escaping CompletionHandler
-        ) where T: RESTRequestHandler, T.Success == Success
+        )
         {
             self.dispatchQueue = dispatchQueue
             self.urlSession = configuration.session
             self.addressCacheStore = configuration.addressCacheStore
             self.retryStrategy = retryStrategy
-            self.requestHandler = AnyRequestHandler(requestHandler)
+            self.requestHandler = requestHandler
 
             loggerMetadata = ["name": .string(name)]
 
