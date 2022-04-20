@@ -14,9 +14,18 @@ class AsyncOperation: Operation {
     private let stateLock = NSRecursiveLock()
 
     /// Operation state flags.
+    private var _isStarted = false
     private var _isExecuting = false
     private var _isFinished = false
     private var _isCancelled = false
+
+    /// Returns true if operation main() was called.
+    final var isStarted: Bool {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+
+        return _isStarted
+    }
 
     final override var isExecuting: Bool {
         stateLock.lock()
@@ -49,6 +58,7 @@ class AsyncOperation: Operation {
             stateLock.unlock()
             finish()
         } else {
+            _isStarted = true
             setExecuting(true)
             stateLock.unlock()
             main()
