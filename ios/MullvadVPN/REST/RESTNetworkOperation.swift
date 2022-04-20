@@ -16,7 +16,7 @@ extension REST {
         private let urlSession: URLSession
         private let addressCacheStore: AddressCache.Store
 
-        private var task: URLSessionTask?
+        private var networkTask: URLSessionTask?
         private var authorizationTask: Cancellable?
 
         private let retryStrategy: RetryStrategy
@@ -51,13 +51,12 @@ extension REST {
 
             dispatchQueue.async {
                 self.retryTimer?.cancel()
-                self.task?.cancel()
-
+                self.networkTask?.cancel()
                 self.authorizationTask?.cancel()
-                self.authorizationTask = nil
 
                 self.retryTimer = nil
-                self.task = nil
+                self.networkTask = nil
+                self.authorizationTask = nil
             }
         }
 
@@ -140,7 +139,7 @@ extension REST {
 
             logger.debug("Executing request using \(endpoint).", metadata: loggerMetadata)
 
-            task = self.urlSession.dataTask(with: urlRequest) { [weak self] data, response, error in
+            networkTask = self.urlSession.dataTask(with: urlRequest) { [weak self] data, response, error in
                 guard let self = self else { return }
 
                 self.dispatchQueue.async {
@@ -157,7 +156,7 @@ extension REST {
                 }
             }
 
-            task?.resume()
+            networkTask?.resume()
         }
 
         private func didFailToCreateURLRequest(_ error: REST.Error) {
