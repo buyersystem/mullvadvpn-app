@@ -10,16 +10,12 @@ import Foundation
 
 extension REST {
     class AuthenticationProxy: Proxy<ProxyConfiguration> {
-        typealias CompletionHandler<Success> = (OperationCompletion<Success, REST.Error>) -> Void
-
-        private let requestFactory = REST.RequestFactory(
-            hostname: ApplicationConfiguration.defaultAPIHostname,
-            pathPrefix: "/auth/v1-beta1",
-            networkTimeout: ApplicationConfiguration.defaultAPINetworkTimeout
-        )
-
         init(configuration: ProxyConfiguration) {
-            super.init(name: "AuthenticationProxy", configuration: configuration)
+            super.init(
+                name: "AuthenticationProxy",
+                pathPrefix: "/auth/v1-beta1",
+                configuration: configuration
+            )
         }
 
         func getAccessToken(accountNumber: String, completion: @escaping CompletionHandler<AccessTokenData>) -> Cancellable {
