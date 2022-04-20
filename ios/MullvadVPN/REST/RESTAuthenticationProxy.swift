@@ -9,7 +9,7 @@
 import Foundation
 
 extension REST {
-    class AuthenticationProxy {
+    class AuthenticationProxy: Proxy<ProxyConfiguration> {
         typealias CompletionHandler<Success> = (OperationCompletion<Success, REST.Error>) -> Void
 
         private let requestFactory = REST.RequestFactory(
@@ -18,12 +18,8 @@ extension REST {
             networkTimeout: ApplicationConfiguration.defaultAPINetworkTimeout
         )
 
-        private let operationQueue = OperationQueue()
-        private let dispatchQueue = DispatchQueue(label: "REST.AuthenticationProxy.Queue")
-        private let configuration: ProxyConfiguration
-
         init(configuration: ProxyConfiguration) {
-            self.configuration = configuration
+            super.init(name: "AuthenticationProxy", configuration: configuration)
         }
 
         func getAccessToken(accountNumber: String, completion: @escaping CompletionHandler<AccessTokenData>) -> Cancellable {
@@ -54,35 +50,12 @@ extension REST {
                 }
             )
 
-            return scheduleOperation(
+            return addOperation(
                 name: "get-access-token",
                 retryStrategy: .default,
                 requestHandler: requestHandler,
                 completionHandler: completion
             )
-        }
-
-        // MARK: - Private
-
-        private func scheduleOperation<Success>(
-            name: String,
-            retryStrategy: REST.RetryStrategy,
-            requestHandler: AnyRequestHandler<Success>,
-            completionHandler: @escaping NetworkOperation<Success>.CompletionHandler
-        ) -> Cancellable
-        {
-            let operation = NetworkOperation(
-                name: getTaskIdentifier(name: name),
-                dispatchQueue: dispatchQueue,
-                configuration: configuration,
-                retryStrategy: retryStrategy,
-                requestHandler: requestHandler,
-                completionHandler: completionHandler
-            )
-
-            operationQueue.addOperation(operation)
-
-            return operation
         }
     }
 
