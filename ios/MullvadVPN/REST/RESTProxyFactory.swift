@@ -10,41 +10,60 @@ import Foundation
 
 extension REST {
     class ProxyFactory {
+        let configuration: AuthProxyConfiguration
+
+        static let shared: ProxyFactory = {
+            let basicConfiguration = ProxyConfiguration(
+                session: REST.sharedURLSession,
+                addressCacheStore: AddressCache.Store.shared
+            )
+
+            let authenticationProxy = REST.AuthenticationProxy(
+                configuration: basicConfiguration
+            )
+            let accessTokenManager = AccessTokenManager(
+                authenticationProxy: authenticationProxy
+            )
+
+            let authConfiguration = AuthProxyConfiguration(
+                proxyConfiguration: basicConfiguration,
+                accessTokenManager: accessTokenManager
+            )
+            return ProxyFactory(configuration: authConfiguration)
+        }()
+
+        init(configuration: AuthProxyConfiguration) {
+            self.configuration = configuration
+        }
+
+        func createAPIProxy() -> REST.APIProxy {
+            return REST.APIProxy(configuration: configuration)
+        }
+
+        func createAccountsProxy() -> REST.AccountsProxy {
+            return REST.AccountsProxy(configuration: configuration)
+        }
+    }
+
+    class ProxyConfiguration {
         let session: URLSession
         let addressCacheStore: AddressCache.Store
-        let accessTokenManager: REST.AccessTokenManager
-
-        static let shared = ProxyFactory(
-            session: REST.sharedURLSession,
-            addressCacheStore: AddressCache.Store.shared
-        )
 
         init(session: URLSession, addressCacheStore: AddressCache.Store) {
             self.session = session
             self.addressCacheStore = addressCacheStore
-
-            let authenticationProxy = REST.AuthenticationProxy(
-                session: session,
-                addressCacheStore: addressCacheStore
-            )
-
-            self.accessTokenManager = REST.AccessTokenManager(
-                authenticationProxy: authenticationProxy
-            )
         }
+    }
 
-        func createAPIProxy() -> REST.APIProxy {
-            return REST.APIProxy(
-                session: session,
-                addressCacheStore: addressCacheStore
-            )
-        }
+    class AuthProxyConfiguration: ProxyConfiguration {
+        let accessTokenManager: AccessTokenManager
 
-        func createAccountsProxy() -> REST.AccountsProxy {
-            return REST.AccountsProxy(
-                session: session,
-                addressCacheStore: addressCacheStore,
-                accessTokenManager: accessTokenManager
+        init(proxyConfiguration: ProxyConfiguration, accessTokenManager: AccessTokenManager) {
+            self.accessTokenManager = accessTokenManager
+
+            super.init(
+                session: proxyConfiguration.session,
+                addressCacheStore: proxyConfiguration.addressCacheStore
             )
         }
     }

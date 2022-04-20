@@ -75,16 +75,15 @@ extension REST {
         init<T>(
             name: String,
             dispatchQueue: DispatchQueue,
-            urlSession: URLSession,
-            addressCacheStore: AddressCache.Store,
+            configuration: ProxyConfiguration,
             retryStrategy: RetryStrategy,
             requestHandler: T,
             completionHandler: @escaping CompletionHandler
         ) where T: RESTRequestHandler, T.Success == Success
         {
             self.dispatchQueue = dispatchQueue
-            self.urlSession = urlSession
-            self.addressCacheStore = addressCacheStore
+            self.urlSession = configuration.session
+            self.addressCacheStore = configuration.addressCacheStore
             self.retryStrategy = retryStrategy
             self.requestHandler = AnyRequestHandler(requestHandler)
 
@@ -142,7 +141,7 @@ extension REST {
 
             authorizationTask = authorizationProvider.getAuthorization { [weak self] result in
                 guard let self = self else { return }
-                
+
                 self.dispatchQueue.async {
                     guard !self.isCancelled else {
                         self.finish(completion: .cancelled)
