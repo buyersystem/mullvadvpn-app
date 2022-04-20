@@ -13,20 +13,13 @@ import struct WireGuardKitTypes.IPAddressRange
 
 extension REST {
     class APIProxy: Proxy<ProxyConfiguration> {
-        typealias CompletionHandler<Success> = (OperationCompletion<Success, REST.Error>) -> Void
-
-        /// REST request factory.
-        private let requestFactory = REST.RequestFactory(
-            hostname: ApplicationConfiguration.defaultAPIHostname,
-            pathPrefix: "/app/v1",
-            networkTimeout: ApplicationConfiguration.defaultAPINetworkTimeout
-        )
-
         init(configuration: ProxyConfiguration) {
-            super.init(name: "APIProxy", configuration: configuration)
+            super.init(
+                name: "APIProxy",
+                pathPrefix: "/app/v1",
+                configuration: configuration
+            )
         }
-
-        // MARK: - Public
 
         func createAccount(
             retryStrategy: REST.RetryStrategy,

@@ -10,13 +10,35 @@ import Foundation
 
 extension REST {
     class Proxy<ConfigurationType: ProxyConfiguration> {
+        typealias CompletionHandler<Success> = (OperationCompletion<Success, REST.Error>) -> Void
+
+        /// Synchronization queue used by network operations.
         let dispatchQueue: DispatchQueue
+
+        /// Operation queue used for running network operations.
         let operationQueue = OperationQueue()
+
+        /// Proxy configuration.
         let configuration: ConfigurationType
 
-        init(name: String, configuration: ConfigurationType) {
-            self.dispatchQueue = DispatchQueue(label: "REST.\(name)Proxy.dispatchQueue")
-            self.configuration = configuration
+        /// URL request factory.
+        let requestFactory: REST.RequestFactory
+
+        init(
+            name: String,
+            pathPrefix: String,
+            configuration proxyConfiguration: ConfigurationType
+        )
+        {
+            dispatchQueue = DispatchQueue(label: "REST.\(name).dispatchQueue")
+            operationQueue.name = "REST.\(name).operationQueue"
+
+            configuration = proxyConfiguration
+            requestFactory = REST.RequestFactory(
+                hostname: ApplicationConfiguration.defaultAPIHostname,
+                pathPrefix: pathPrefix,
+                networkTimeout: ApplicationConfiguration.defaultAPINetworkTimeout
+            )
         }
 
         func addOperation<Success>(

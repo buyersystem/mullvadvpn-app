@@ -186,6 +186,7 @@
 		58871D2325D535D2002297FA /* IPAddressRange+Codable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5850366725A47AC700A43E93 /* IPAddressRange+Codable.swift */; };
 		5888AD83227B11080051EB06 /* SelectLocationCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5888AD82227B11080051EB06 /* SelectLocationCell.swift */; };
 		5888AD87227B17950051EB06 /* SelectLocationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5888AD86227B17950051EB06 /* SelectLocationViewController.swift */; };
+		588BCF24280FE43D009ADCEC /* RESTDevicesProxy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 588BCF23280FE43D009ADCEC /* RESTDevicesProxy.swift */; };
 		588BCF26280FE79A009ADCEC /* RESTProxy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 588BCF25280FE79A009ADCEC /* RESTProxy.swift */; };
 		588D2FE3248AC27F00E313F7 /* AsyncOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58E973DD24850EB600096F90 /* AsyncOperation.swift */; };
 		58906DE02445C7A5002F0673 /* NEProviderStopReason+Debug.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58906DDF2445C7A5002F0673 /* NEProviderStopReason+Debug.swift */; };
@@ -480,6 +481,7 @@
 		588527B5276B58B300BAA373 /* SetTunnelSettingsOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetTunnelSettingsOperation.swift; sourceTree = "<group>"; };
 		5888AD82227B11080051EB06 /* SelectLocationCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectLocationCell.swift; sourceTree = "<group>"; };
 		5888AD86227B17950051EB06 /* SelectLocationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectLocationViewController.swift; sourceTree = "<group>"; };
+		588BCF23280FE43D009ADCEC /* RESTDevicesProxy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RESTDevicesProxy.swift; sourceTree = "<group>"; };
 		588BCF25280FE79A009ADCEC /* RESTProxy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RESTProxy.swift; sourceTree = "<group>"; };
 		58906DDF2445C7A5002F0673 /* NEProviderStopReason+Debug.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NEProviderStopReason+Debug.swift"; sourceTree = "<group>"; };
 		58907D9424D17B4E00CFC3F5 /* DisconnectSplitButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisconnectSplitButton.swift; sourceTree = "<group>"; };
@@ -768,6 +770,7 @@
 				58554F72280AFA5A00013055 /* RESTAuthenticationProxy.swift */,
 				58B5A898280AB0D7009FDE99 /* RESTAuthorization.swift */,
 				585DA88926B027A300B8C587 /* RESTCoding.swift */,
+				588BCF23280FE43D009ADCEC /* RESTDevicesProxy.swift */,
 				585DA88626B0277200B8C587 /* RESTError.swift */,
 				58095C522760EEC700890776 /* RESTNetworkOperation.swift */,
 				588BCF25280FE79A009ADCEC /* RESTProxy.swift */,
@@ -1496,6 +1499,7 @@
 				58C3A4B222456F1B00340BDB /* AccountInputGroupView.swift in Sources */,
 				58F840B22464491D0044E708 /* ChainedError.swift in Sources */,
 				58FAEDFF24533A7000CB0F5B /* KeychainReturn.swift in Sources */,
+				588BCF24280FE43D009ADCEC /* RESTDevicesProxy.swift in Sources */,
 				58ACF64B26553C3F00ACE4B7 /* SettingsSwitchCell.swift in Sources */,
 				587EB67027143B6500123C75 /* DataSourceSnapshot.swift in Sources */,
 				585DA88A26B027A300B8C587 /* RESTCoding.swift in Sources */,
