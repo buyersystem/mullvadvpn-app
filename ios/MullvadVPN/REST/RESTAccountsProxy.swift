@@ -34,6 +34,12 @@ extension REST {
                     } else {
                         return ResponseHandling.decodeErrorResponseAndMapToServerError(from: data)
                     }
+                },
+                getAuthorizationProvider: {
+                    return REST.AccessTokenAuthorizationProvider(
+                        accountNumber: accountNumber,
+                        accessTokenManager: self.configuration.accessTokenManager
+                    )
                 }
             )
 
