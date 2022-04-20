@@ -43,6 +43,10 @@ extension REST {
         func createAccountsProxy() -> REST.AccountsProxy {
             return REST.AccountsProxy(configuration: configuration)
         }
+
+        func createDevicesProxy() -> REST.DevicesProxy {
+            return REST.DevicesProxy(configuration: configuration)
+        }
     }
 
     class ProxyConfiguration {
