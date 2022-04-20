@@ -9,7 +9,7 @@
 import Foundation
 
 extension REST {
-    class AccountsProxy {
+    class AccountsProxy: Proxy<AuthProxyConfiguration> {
         typealias CompletionHandler<Success> = (OperationCompletion<Success, REST.Error>) -> Void
 
         private let requestFactory = REST.RequestFactory(
@@ -18,12 +18,8 @@ extension REST {
             networkTimeout: ApplicationConfiguration.defaultAPINetworkTimeout
         )
 
-        private let operationQueue = OperationQueue()
-        private let dispatchQueue = DispatchQueue(label: "REST.AccountsProxy.Queue")
-        private let configuration: AuthProxyConfiguration
-
         init(configuration: AuthProxyConfiguration) {
-            self.configuration = configuration
+            super.init(name: "AccountsProxy", configuration: configuration)
         }
 
         func getMyAccount(accountNumber: String, completion: @escaping CompletionHandler<BetaAccountResponse>) -> Cancellable {
@@ -45,35 +41,12 @@ extension REST {
                 }
             )
 
-            return scheduleOperation(
+            return addOperation(
                 name: "get-my-account",
                 retryStrategy: .default,
                 requestHandler: requestHandler,
                 completionHandler: completion
             )
-        }
-
-        // MARK: - Private
-
-        private func scheduleOperation<Success>(
-            name: String,
-            retryStrategy: REST.RetryStrategy,
-            requestHandler: AnyRequestHandler<Success>,
-            completionHandler: @escaping NetworkOperation<Success>.CompletionHandler
-        ) -> Cancellable
-        {
-            let operation = NetworkOperation(
-                name: getTaskIdentifier(name: name),
-                dispatchQueue: dispatchQueue,
-                configuration: configuration,
-                retryStrategy: retryStrategy,
-                requestHandler: requestHandler,
-                completionHandler: completionHandler
-            )
-
-            operationQueue.addOperation(operation)
-
-            return operation
         }
     }
 

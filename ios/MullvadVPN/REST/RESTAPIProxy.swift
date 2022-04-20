@@ -12,10 +12,8 @@ import class WireGuardKitTypes.PublicKey
 import struct WireGuardKitTypes.IPAddressRange
 
 extension REST {
-    class APIProxy {
+    class APIProxy: Proxy<ProxyConfiguration> {
         typealias CompletionHandler<Success> = (OperationCompletion<Success, REST.Error>) -> Void
-
-        private let configuration: ProxyConfiguration
 
         /// REST request factory.
         private let requestFactory = REST.RequestFactory(
@@ -24,14 +22,8 @@ extension REST {
             networkTimeout: ApplicationConfiguration.defaultAPINetworkTimeout
         )
 
-        /// Operation queue used for running network requests.
-        private let operationQueue = OperationQueue()
-
-        /// Serial dispatch queue used by operations.
-        private let dispatchQueue = DispatchQueue(label: "REST.APIProxy.Queue")
-
         init(configuration: ProxyConfiguration) {
-            self.configuration = configuration
+            super.init(name: "APIProxy", configuration: configuration)
         }
 
         // MARK: - Public
@@ -60,7 +52,7 @@ extension REST {
                 }
             )
 
-            return scheduleOperation(
+            return addOperation(
                 name: "create-account",
                 retryStrategy: retryStrategy,
                 requestHandler: requestHandler,
@@ -90,7 +82,7 @@ extension REST {
                 }
             )
 
-            return scheduleOperation(
+            return addOperation(
                 name: "get-api-addrs",
                 retryStrategy: retryStrategy,
                 requestHandler: requestHandler,
@@ -133,7 +125,7 @@ extension REST {
                 }
             )
 
-            return scheduleOperation(
+            return addOperation(
                 name: "get-relays",
                 retryStrategy: retryStrategy,
                 requestHandler: requestHandler,
@@ -168,7 +160,7 @@ extension REST {
                 }
             )
 
-            return scheduleOperation(
+            return addOperation(
                 name: "get-account-expiry",
                 retryStrategy: retryStrategy,
                 requestHandler: requestHandler,
@@ -208,7 +200,7 @@ extension REST {
                 }
             )
 
-            return scheduleOperation(
+            return addOperation(
                 name: "get-wireguard-key",
                 retryStrategy: retryStrategy,
                 requestHandler: requestHandler,
@@ -251,7 +243,7 @@ extension REST {
                 }
             )
 
-            return scheduleOperation(
+            return addOperation(
                 name: "push-wireguard-key",
                 retryStrategy: retryStrategy,
                 requestHandler: requestHandler,
@@ -296,7 +288,7 @@ extension REST {
                 }
             )
 
-            return scheduleOperation(
+            return addOperation(
                 name: "replace-wireguard-key",
                 retryStrategy: retryStrategy,
                 requestHandler: requestHandler,
@@ -334,7 +326,7 @@ extension REST {
                     }
                 }
             )
-            return scheduleOperation(
+            return addOperation(
                 name: "delete-wireguard-key",
                 retryStrategy: retryStrategy,
                 requestHandler: requestHandler,
@@ -383,7 +375,7 @@ extension REST {
                     }
                 }
             )
-            return scheduleOperation(
+            return addOperation(
                 name: "create-apple-payment",
                 retryStrategy: retryStrategy,
                 requestHandler: requestHandler,
@@ -422,35 +414,12 @@ extension REST {
                 }
             )
 
-            return scheduleOperation(
+            return addOperation(
                 name: "send-problem-report",
                 retryStrategy: retryStrategy,
                 requestHandler: requestHandler,
                 completionHandler: completionHandler
             )
-        }
-
-        // MARK: - Private
-
-        private func scheduleOperation<Success>(
-            name: String,
-            retryStrategy: REST.RetryStrategy,
-            requestHandler: AnyRequestHandler<Success>,
-            completionHandler: @escaping NetworkOperation<Success>.CompletionHandler
-        ) -> Cancellable
-        {
-            let operation = NetworkOperation(
-                name: getTaskIdentifier(name: name),
-                dispatchQueue: dispatchQueue,
-                configuration: configuration,
-                retryStrategy: retryStrategy,
-                requestHandler: requestHandler,
-                completionHandler: completionHandler
-            )
-
-            operationQueue.addOperation(operation)
-
-            return operation
         }
     }
 
