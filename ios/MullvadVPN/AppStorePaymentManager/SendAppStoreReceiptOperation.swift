@@ -10,7 +10,7 @@ import Foundation
 import Logging
 
 class SendAppStoreReceiptOperation: ResultOperation<REST.CreateApplePaymentResponse, AppStorePaymentManager.Error> {
-   private let apiProxy: REST.Client
+   private let apiProxy: REST.APIProxy
    private let accountToken: String
    private let forceRefresh: Bool
    private let receiptProperties: [String: Any]?
@@ -19,7 +19,7 @@ class SendAppStoreReceiptOperation: ResultOperation<REST.CreateApplePaymentRespo
 
    private let logger = Logger(label: "AppStorePaymentManager.SendAppStoreReceiptOperation")
 
-   init(apiProxy: REST.Client, accountToken: String, forceRefresh: Bool, receiptProperties: [String: Any]?, completionHandler: @escaping CompletionHandler) {
+   init(apiProxy: REST.APIProxy, accountToken: String, forceRefresh: Bool, receiptProperties: [String: Any]?, completionHandler: @escaping CompletionHandler) {
        self.apiProxy = apiProxy
        self.accountToken = accountToken
        self.forceRefresh = forceRefresh

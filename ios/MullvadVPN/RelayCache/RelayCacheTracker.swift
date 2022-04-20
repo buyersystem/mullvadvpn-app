@@ -302,7 +302,7 @@ fileprivate class UpdateRelaysOperation: ResultOperation<RelayCache.FetchResult,
     typealias UpdateHandler = (RelayCache.CachedRelays) -> Void
 
     private let dispatchQueue: DispatchQueue
-    private let apiProxy: REST.Client
+    private let apiProxy: REST.APIProxy
     private let cacheFileURL: URL
     private let relayUpdateInterval: TimeInterval
 
@@ -312,7 +312,7 @@ fileprivate class UpdateRelaysOperation: ResultOperation<RelayCache.FetchResult,
     private var downloadCancellable: Cancellable?
 
     init(dispatchQueue: DispatchQueue,
-         apiProxy: REST.Client,
+         apiProxy: REST.APIProxy,
          cacheFileURL: URL,
          relayUpdateInterval: TimeInterval,
          updateHandler: @escaping UpdateHandler,

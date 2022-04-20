@@ -13,7 +13,7 @@ class ReplaceKeyOperation: ResultOperation<TunnelManager.KeyRotationResult, Tunn
     private let queue: DispatchQueue
     private let state: TunnelManager.State
 
-    private let apiProxy: REST.Client
+    private let apiProxy: REST.APIProxy
     private var restRequest: Cancellable?
 
     private let rotationInterval: TimeInterval?
@@ -24,7 +24,7 @@ class ReplaceKeyOperation: ResultOperation<TunnelManager.KeyRotationResult, Tunn
     class func operationForKeyRotation(
         queue: DispatchQueue,
         state: TunnelManager.State,
-        apiProxy: REST.Client,
+        apiProxy: REST.APIProxy,
         rotationInterval: TimeInterval,
         completionHandler: @escaping CompletionHandler
     ) -> ReplaceKeyOperation {
@@ -40,7 +40,7 @@ class ReplaceKeyOperation: ResultOperation<TunnelManager.KeyRotationResult, Tunn
     class func operationForKeyRegeneration(
         queue: DispatchQueue,
         state: TunnelManager.State,
-        apiProxy: REST.Client,
+        apiProxy: REST.APIProxy,
         completionHandler: @escaping (OperationCompletion<(), TunnelManager.Error>) -> Void
     ) -> ReplaceKeyOperation {
         return ReplaceKeyOperation(
@@ -65,7 +65,7 @@ class ReplaceKeyOperation: ResultOperation<TunnelManager.KeyRotationResult, Tunn
     private init(
         queue: DispatchQueue,
         state: TunnelManager.State,
-        apiProxy: REST.Client,
+        apiProxy: REST.APIProxy,
         rotationInterval: TimeInterval?,
         completionHandler: @escaping CompletionHandler
     ) {

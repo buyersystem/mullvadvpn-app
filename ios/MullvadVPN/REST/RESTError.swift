@@ -10,7 +10,7 @@ import Foundation
 
 extension REST {
 
-    /// An error type returned by `REST.Client`
+    /// An error type returned by REST API classes.
     enum Error: ChainedError {
         /// A failure to encode the payload
         case encodePayload(Swift.Error)
@@ -74,14 +74,14 @@ extension REST {
             case Code.keyLimitReached.rawValue:
                 return NSLocalizedString(
                     "KEY_LIMIT_REACHED_ERROR_DESCRIPTION",
-                    tableName: "RESTClient",
+                    tableName: "REST",
                     value: "Too many WireGuard keys in use.",
                     comment: ""
                 )
             case Code.invalidAccount.rawValue:
                 return NSLocalizedString(
                     "INVALID_ACCOUNT_ERROR_DESCRIPTION",
-                    tableName: "RESTClient",
+                    tableName: "REST",
                     value: "Invalid account.",
                     comment: ""
                 )
@@ -95,7 +95,7 @@ extension REST {
             case Code.keyLimitReached.rawValue:
                 return NSLocalizedString(
                     "KEY_LIMIT_REACHED_ERROR_RECOVERY_SUGGESTION",
-                    tableName: "RESTClient",
+                    tableName: "REST",
                     value: "Please visit the website to revoke a key before login is possible.",
                     comment: ""
                 )

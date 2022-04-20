@@ -15,13 +15,21 @@ class SetAccountOperation: ResultOperation<(), TunnelManager.Error> {
 
     private let queue: DispatchQueue
     private let state: TunnelManager.State
-    private let apiProxy: REST.Client
+    private let apiProxy: REST.APIProxy
     private let accountToken: String?
 
     private var willDeleteVPNConfigurationHandler: WillDeleteVPNConfigurationHandler?
     private let logger = Logger(label: "TunnelManager.SetAccountOperation")
 
-    init(queue: DispatchQueue, state: TunnelManager.State, apiProxy: REST.Client, accountToken: String?, willDeleteVPNConfigurationHandler: @escaping WillDeleteVPNConfigurationHandler, completionHandler: @escaping CompletionHandler) {
+    init(
+        queue: DispatchQueue,
+        state: TunnelManager.State,
+        apiProxy: REST.APIProxy,
+        accountToken: String?,
+        willDeleteVPNConfigurationHandler: @escaping WillDeleteVPNConfigurationHandler,
+        completionHandler: @escaping CompletionHandler
+    )
+    {
         self.queue = queue
         self.state = state
         self.apiProxy = apiProxy

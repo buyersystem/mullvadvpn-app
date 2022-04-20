@@ -21,8 +21,8 @@ extension AddressCache {
         /// Logger.
         private let logger = Logger(label: "AddressCache.Tracker")
 
-        /// REST client
-        private let apiProxy: REST.Client
+        /// REST API proxy.
+        private let apiProxy: REST.APIProxy
 
         /// Store.
         private let store: AddressCache.Store
@@ -47,7 +47,7 @@ extension AddressCache {
         private let stateQueue = DispatchQueue(label: "AddressCache.Tracker.stateQueue")
 
         /// Designated initializer
-        init(apiProxy: REST.Client, store: AddressCache.Store) {
+        init(apiProxy: REST.APIProxy, store: AddressCache.Store) {
             self.apiProxy = apiProxy
             self.store = store
         }
