@@ -30,4 +30,45 @@ extension REST.Coding {
         decoder.dataDecodingStrategy = .base64
         return decoder
     }
+
+    static func makeJSONEncoderBetaAPI() -> JSONEncoder {
+        let dateFormatter = ISO8601DateFormatter()
+        dateFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+
+        let encoder = JSONEncoder()
+        encoder.keyEncodingStrategy = .convertToSnakeCase
+        encoder.dataEncodingStrategy = .base64
+        encoder.dateEncodingStrategy = .custom({ date, encoder in
+            var contaner = encoder.singleValueContainer()
+            let value = dateFormatter.string(from: date)
+
+            try contaner.encode(value)
+        })
+
+        return encoder
+    }
+
+    static func makeJSONDecoderBetaAPI() -> JSONDecoder {
+        let dateFormatter = ISO8601DateFormatter()
+        dateFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        decoder.dataDecodingStrategy = .base64
+        decoder.dateDecodingStrategy = .custom({ decoder in
+            let container = try decoder.singleValueContainer()
+            let value = try container.decode(String.self)
+
+            if let date = dateFormatter.date(from: value) {
+                return date
+            }
+
+            throw DecodingError.dataCorruptedError(
+                in: container,
+                debugDescription: "Expected date string to be ISO8601-formatted."
+            )
+        })
+
+        return decoder
+    }
 }
