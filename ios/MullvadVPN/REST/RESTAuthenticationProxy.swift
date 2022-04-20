@@ -19,7 +19,7 @@ extension REST {
         }
 
         func getAccessToken(accountNumber: String, completion: @escaping CompletionHandler<AccessTokenData>) -> Cancellable {
-            let request = NewAccessTokenRequest(accountNumber: accountNumber)
+            let request = AccessTokenRequest(accountNumber: accountNumber)
 
             let requestHandler = AnyRequestHandler(
                 createURLRequest: { endpoint in
@@ -60,7 +60,7 @@ extension REST {
         let expiry: Date
     }
 
-    fileprivate struct NewAccessTokenRequest: Encodable {
+    fileprivate struct AccessTokenRequest: Encodable {
         let accountNumber: String
     }
 }
