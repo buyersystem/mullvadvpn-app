@@ -13,7 +13,7 @@ class ReplaceKeyOperation: ResultOperation<TunnelManager.KeyRotationResult, Tunn
     private let queue: DispatchQueue
     private let state: TunnelManager.State
 
-    private let restClient: REST.Client
+    private let apiProxy: REST.Client
     private var restRequest: Cancellable?
 
     private let rotationInterval: TimeInterval?
@@ -24,14 +24,14 @@ class ReplaceKeyOperation: ResultOperation<TunnelManager.KeyRotationResult, Tunn
     class func operationForKeyRotation(
         queue: DispatchQueue,
         state: TunnelManager.State,
-        restClient: REST.Client,
+        apiProxy: REST.Client,
         rotationInterval: TimeInterval,
         completionHandler: @escaping CompletionHandler
     ) -> ReplaceKeyOperation {
         return ReplaceKeyOperation(
             queue: queue,
             state: state,
-            restClient: restClient,
+            apiProxy: apiProxy,
             rotationInterval: rotationInterval,
             completionHandler: completionHandler
         )
@@ -40,13 +40,13 @@ class ReplaceKeyOperation: ResultOperation<TunnelManager.KeyRotationResult, Tunn
     class func operationForKeyRegeneration(
         queue: DispatchQueue,
         state: TunnelManager.State,
-        restClient: REST.Client,
+        apiProxy: REST.Client,
         completionHandler: @escaping (OperationCompletion<(), TunnelManager.Error>) -> Void
     ) -> ReplaceKeyOperation {
         return ReplaceKeyOperation(
             queue: queue,
             state: state,
-            restClient: restClient,
+            apiProxy: apiProxy,
             rotationInterval: nil
         ) { completion in
             let mappedCompletion = completion.map { keyRotationResult -> () in
@@ -65,14 +65,14 @@ class ReplaceKeyOperation: ResultOperation<TunnelManager.KeyRotationResult, Tunn
     private init(
         queue: DispatchQueue,
         state: TunnelManager.State,
-        restClient: REST.Client,
+        apiProxy: REST.Client,
         rotationInterval: TimeInterval?,
         completionHandler: @escaping CompletionHandler
     ) {
         self.queue = queue
         self.state = state
 
-        self.restClient = restClient
+        self.apiProxy = apiProxy
         self.rotationInterval = rotationInterval
 
         super.init(completionQueue: queue, completionHandler: completionHandler)
@@ -153,7 +153,7 @@ class ReplaceKeyOperation: ResultOperation<TunnelManager.KeyRotationResult, Tunn
 
         logger.debug("Replacing old key with new key on server...")
 
-        restRequest = self.restClient.replaceWireguardKey(
+        restRequest = self.apiProxy.replaceWireguardKey(
             token: tunnelInfo.token,
             oldPublicKey: oldPublicKey,
             newPublicKey: newPrivateKey.publicKey,

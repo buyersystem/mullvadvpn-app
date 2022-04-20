@@ -15,14 +15,6 @@ extension REST {
     class Client {
         typealias CompletionHandler<Success> = (OperationCompletion<Success, REST.Error>) -> Void
 
-        /// Shared REST client.
-        static let shared: Client = {
-            return Client(
-                session: REST.sharedURLSession,
-                addressCacheStore: AddressCache.Store.shared
-            )
-        }()
-
         /// URL session.
         private let session: URLSession
 
