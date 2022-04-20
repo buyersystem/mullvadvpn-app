@@ -1,5 +1,5 @@
 //
-//  RESTClient.swift
+//  RESTAPIProxy.swift
 //  MullvadVPN
 //
 //  Created by pronebird on 10/07/2020.
@@ -12,7 +12,7 @@ import class WireGuardKitTypes.PublicKey
 import struct WireGuardKitTypes.IPAddressRange
 
 extension REST {
-    class Client {
+    class APIProxy {
         typealias CompletionHandler<Success> = (OperationCompletion<Success, REST.Error>) -> Void
 
         /// URL session.
@@ -32,7 +32,7 @@ extension REST {
         private let operationQueue = OperationQueue()
 
         /// Serial dispatch queue used by operations.
-        private let dispatchQueue = DispatchQueue(label: "REST.Client.Queue")
+        private let dispatchQueue = DispatchQueue(label: "REST.APIProxy.Queue")
 
         init(session: URLSession, addressCacheStore: AddressCache.Store) {
             self.session = session

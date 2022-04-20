@@ -52,7 +52,7 @@ final class TunnelManager: TunnelManagerStateDelegate {
 
     // MARK: - Internal variables
 
-    private let apiProxy: REST.Client
+    private let apiProxy: REST.APIProxy
 
     private let logger = Logger(label: "TunnelManager")
     private let stateQueue = DispatchQueue(label: "TunnelManager.stateQueue")
@@ -80,7 +80,7 @@ final class TunnelManager: TunnelManagerStateDelegate {
         return state.tunnelStatus.state
     }
 
-    private init(apiProxy: REST.Client) {
+    private init(apiProxy: REST.APIProxy) {
         self.apiProxy = apiProxy
         self.state = TunnelManager.State(queue: stateQueue)
         self.state.delegate = self

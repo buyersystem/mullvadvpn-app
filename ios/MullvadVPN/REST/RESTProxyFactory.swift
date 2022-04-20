@@ -12,7 +12,7 @@ extension REST {
     class ProxyFactory {
         let session: URLSession
         let addressCacheStore: AddressCache.Store
-        let accessTokenManager: AccessTokenManager
+        let accessTokenManager: REST.AccessTokenManager
 
         static let shared = ProxyFactory(
             session: REST.sharedURLSession,
@@ -23,25 +23,25 @@ extension REST {
             self.session = session
             self.addressCacheStore = addressCacheStore
 
-            let authenticationProxy = AuthenticationProxy(
+            let authenticationProxy = REST.AuthenticationProxy(
                 session: session,
                 addressCacheStore: addressCacheStore
             )
 
-            self.accessTokenManager = AccessTokenManager(
+            self.accessTokenManager = REST.AccessTokenManager(
                 authenticationProxy: authenticationProxy
             )
         }
 
-        func createAPIProxy() -> REST.Client {
-            return REST.Client(
+        func createAPIProxy() -> REST.APIProxy {
+            return REST.APIProxy(
                 session: session,
                 addressCacheStore: addressCacheStore
             )
         }
 
-        func createAccountsProxy() -> AccountsProxy {
-            return AccountsProxy(
+        func createAccountsProxy() -> REST.AccountsProxy {
+            return REST.AccountsProxy(
                 session: session,
                 addressCacheStore: addressCacheStore,
                 accessTokenManager: accessTokenManager
