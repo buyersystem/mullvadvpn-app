@@ -600,7 +600,9 @@ class ProblemReportViewController: UIViewController, UITextFieldDelegate, Condit
 
         willSendProblemReport()
 
-        _ = REST.Client.shared.sendProblemReport(request, retryStrategy: .default) { completion in
+        let apiProxy = REST.ProxyFactory.shared.createAPIProxy()
+
+        _ = apiProxy.sendProblemReport(request, retryStrategy: .default) { completion in
             self.didSendProblemReport(viewModel: viewModel, completion: completion)
         }
     }
