@@ -13,8 +13,14 @@ extension REST {
         init(configuration: ProxyConfiguration) {
             super.init(
                 name: "AuthenticationProxy",
-                pathPrefix: "/auth/v1-beta1",
-                configuration: configuration
+                configuration: configuration,
+                requestFactory: RequestFactory.withDefaultAPICredentials(
+                    pathPrefix: "/auth/v1-beta1",
+                    bodyEncoder: Coding.makeJSONEncoderBetaAPI()
+                ),
+                responseDecoder: ResponseDecoder(
+                    decoder: Coding.makeJSONDecoderBetaAPI()
+                )
             )
         }
 

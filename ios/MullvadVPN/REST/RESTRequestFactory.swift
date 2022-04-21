@@ -13,11 +13,28 @@ extension REST {
         let hostname: String
         let pathPrefix: String
         let networkTimeout: TimeInterval
+        let bodyEncoder: JSONEncoder
 
-        init(hostname: String, pathPrefix: String, networkTimeout: TimeInterval) {
+        class func withDefaultAPICredentials(pathPrefix: String, bodyEncoder: JSONEncoder) -> RequestFactory {
+            return RequestFactory(
+                hostname: ApplicationConfiguration.defaultAPIHostname,
+                pathPrefix: pathPrefix,
+                networkTimeout: ApplicationConfiguration.defaultAPINetworkTimeout,
+                bodyEncoder: bodyEncoder
+            )
+        }
+
+        init(
+            hostname: String,
+            pathPrefix: String,
+            networkTimeout: TimeInterval,
+            bodyEncoder: JSONEncoder
+        )
+        {
             self.hostname = hostname
             self.pathPrefix = pathPrefix
             self.networkTimeout = networkTimeout
+            self.bodyEncoder = bodyEncoder
         }
 
         func createURLRequest(endpoint: AnyIPEndpoint, method: HTTPMethod, path: String) -> URLRequest {
@@ -52,19 +69,24 @@ extension REST {
                 path: path
             )
 
-            return RequestBuilder(request: request)
+            return RequestBuilder(
+                request: request,
+                bodyEncoder: bodyEncoder
+            )
         }
     }
 
     struct RequestBuilder {
         private var request: URLRequest
+        private let bodyEncoder: JSONEncoder
 
-        init(request: URLRequest) {
+        init(request: URLRequest, bodyEncoder: JSONEncoder) {
             self.request = request
+            self.bodyEncoder = bodyEncoder
         }
 
         mutating func setHTTPBody<T: Encodable>(value: T) throws {
-            request.httpBody = try REST.Coding.makeJSONEncoder().encode(value)
+            request.httpBody = try bodyEncoder.encode(value)
         }
 
         mutating func setETagHeader(etag: String) {

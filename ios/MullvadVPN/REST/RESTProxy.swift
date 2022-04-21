@@ -24,21 +24,22 @@ extension REST {
         /// URL request factory.
         let requestFactory: REST.RequestFactory
 
+        /// URL response decoder.
+        let responseDecoder: REST.ResponseDecoder
+
         init(
             name: String,
-            pathPrefix: String,
-            configuration proxyConfiguration: ConfigurationType
+            configuration: ConfigurationType,
+            requestFactory: REST.RequestFactory,
+            responseDecoder: REST.ResponseDecoder
         )
         {
             dispatchQueue = DispatchQueue(label: "REST.\(name).dispatchQueue")
             operationQueue.name = "REST.\(name).operationQueue"
 
-            configuration = proxyConfiguration
-            requestFactory = REST.RequestFactory(
-                hostname: ApplicationConfiguration.defaultAPIHostname,
-                pathPrefix: pathPrefix,
-                networkTimeout: ApplicationConfiguration.defaultAPINetworkTimeout
-            )
+            self.configuration = configuration
+            self.requestFactory = requestFactory
+            self.responseDecoder = responseDecoder
         }
 
         func addOperation<Success>(
