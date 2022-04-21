@@ -13,14 +13,18 @@ extension REST {
         init(configuration: AuthProxyConfiguration) {
             super.init(
                 name: "AccountsProxy",
-                pathPrefix: "/accounts/v1-beta1",
-                configuration: configuration
+                configuration: configuration,
+                requestFactory: RequestFactory.withDefaultAPICredentials(
+                    pathPrefix: "/accounts/v1-beta1",
+                    bodyEncoder: Coding.makeJSONEncoderBetaAPI()
+                ),
+                responseDecoder: ResponseDecoder(
+                    decoder: Coding.makeJSONDecoderBetaAPI()
+                )
             )
         }
 
         func getMyAccount(accountNumber: String, completion: @escaping CompletionHandler<BetaAccountResponse>) -> Cancellable {
-            let responseDecoder = ResponseDecoder(decoder: Coding.makeJSONDecoderBetaAPI())
-
             let requestHandler = AnyRequestHandler(
                 createURLRequest: { endpoint, completion in
                     var requestBuilder = self.requestFactory.createURLRequestBuilder(
@@ -40,9 +44,9 @@ extension REST {
                 },
                 handleURLResponse: { response, data -> Result<BetaAccountResponse, REST.Error> in
                     if HTTPStatus.isSuccess(response.statusCode) {
-                        return responseDecoder.decodeSuccessResponse(BetaAccountResponse.self, from: data)
+                        return self.responseDecoder.decodeSuccessResponse(BetaAccountResponse.self, from: data)
                     } else {
-                        return responseDecoder.decodeErrorResponseAndMapToServerError(from: data)
+                        return self.responseDecoder.decodeErrorResponseAndMapToServerError(from: data)
                     }
                 }
             )
