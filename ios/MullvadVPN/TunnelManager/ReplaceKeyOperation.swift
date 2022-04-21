@@ -153,7 +153,7 @@ class ReplaceKeyOperation: ResultOperation<TunnelManager.KeyRotationResult, Tunn
         logger.debug("Replacing old key with new key on server...")
 
         restRequest = self.apiProxy.replaceWireguardKey(
-            token: tunnelInfo.token,
+            accountNumber: tunnelInfo.token,
             oldPublicKey: oldPublicKey,
             newPublicKey: newPrivateKey.publicKey,
             retryStrategy: .default

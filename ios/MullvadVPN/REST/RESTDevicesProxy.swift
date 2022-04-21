@@ -22,27 +22,32 @@ extension REST {
         }
 
         func getDevices(accountNumber: String, completion: @escaping CompletionHandler<[Device]>) -> Cancellable {
+            let responseDecoder = ResponseDecoder(decoder: Coding.makeJSONDecoderBetaAPI())
+
             let requestHandler = AnyRequestHandler(
-                createURLRequest: { endpoint in
-                    let request = self.requestFactory.createURLRequest(
+                createURLRequest: { endpoint, completion in
+                    var requestBuilder = self.requestFactory.createURLRequestBuilder(
                         endpoint: endpoint,
                         method: .get,
                         path: "/devices"
                     )
-                    return .success(request)
+
+                    return self.configuration.accessTokenManager
+                        .getAccessToken(accountNumber: accountNumber) { tokenCompletion in
+                            let requestCompletion = tokenCompletion.map { tokenData -> URLRequest in
+                                requestBuilder.setAuthorization(.accessToken(tokenData.accessToken))
+                                return requestBuilder.getURLRequest()
+                            }
+
+                            completion(requestCompletion)
+                        }
                 },
                 handleURLResponse: { response, data -> Result<[Device], REST.Error> in
                     if HTTPStatus.isSuccess(response.statusCode) {
-                        return REST.ResponseHandling.decodeSuccessResponse([Device].self, from: data)
+                        return responseDecoder.decodeSuccessResponse([Device].self, from: data)
                     } else {
-                        return REST.ResponseHandling.decodeErrorResponseAndMapToServerError(from: data)
+                        return responseDecoder.decodeErrorResponseAndMapToServerError(from: data)
                     }
-                },
-                getAuthorizationProvider: {
-                    return AccessTokenAuthorizationProvider(
-                        accountNumber: accountNumber,
-                        accessTokenManager: self.configuration.accessTokenManager
-                    )
                 }
             )
 

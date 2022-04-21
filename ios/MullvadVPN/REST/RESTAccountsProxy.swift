@@ -19,27 +19,31 @@ extension REST {
         }
 
         func getMyAccount(accountNumber: String, completion: @escaping CompletionHandler<BetaAccountResponse>) -> Cancellable {
+            let responseDecoder = ResponseDecoder(decoder: Coding.makeJSONDecoderBetaAPI())
+
             let requestHandler = AnyRequestHandler(
-                createURLRequest: { endpoint in
-                    let request = self.requestFactory.createURLRequest(
+                createURLRequest: { endpoint, completion in
+                    var requestBuilder = self.requestFactory.createURLRequestBuilder(
                         endpoint: endpoint,
                         method: .post,
                         path: "/accounts/me"
                     )
-                    return .success(request)
+
+                    return self.configuration.accessTokenManager
+                        .getAccessToken(accountNumber: accountNumber) { tokenCompletion in
+                            let requestCompletion = tokenCompletion.map { tokenData -> URLRequest in
+                                requestBuilder.setAuthorization(.accessToken(tokenData.accessToken))
+                                return requestBuilder.getURLRequest()
+                            }
+                            completion(requestCompletion)
+                        }
                 },
                 handleURLResponse: { response, data -> Result<BetaAccountResponse, REST.Error> in
                     if HTTPStatus.isSuccess(response.statusCode) {
-                        return ResponseHandling.decodeSuccessResponse(BetaAccountResponse.self, from: data)
+                        return responseDecoder.decodeSuccessResponse(BetaAccountResponse.self, from: data)
                     } else {
-                        return ResponseHandling.decodeErrorResponseAndMapToServerError(from: data)
+                        return responseDecoder.decodeErrorResponseAndMapToServerError(from: data)
                     }
-                },
-                getAuthorizationProvider: {
-                    return REST.AccessTokenAuthorizationProvider(
-                        accountNumber: accountNumber,
-                        accessTokenManager: self.configuration.accessTokenManager
-                    )
                 }
             )
 
