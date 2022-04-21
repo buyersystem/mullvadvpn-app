@@ -12,4 +12,8 @@ protocol Cancellable {
     func cancel()
 }
 
+struct EmptyCancellable: Cancellable {
+    func cancel() {}
+}
+
 extension Operation: Cancellable {}

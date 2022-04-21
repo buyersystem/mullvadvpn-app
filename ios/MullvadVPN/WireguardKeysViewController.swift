@@ -216,7 +216,7 @@ class WireguardKeysViewController: UIViewController, TunnelObserver {
         verifyKeyCancellable?.cancel()
 
         verifyKeyCancellable = apiProxy.getWireguardKey(
-            token: tunnelInfo.token,
+            accountNumber: tunnelInfo.token,
             publicKey: tunnelInfo.tunnelSettings.interface.publicKey,
             retryStrategy: .default
         ) { [weak self] result in

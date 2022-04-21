@@ -152,7 +152,7 @@ class SetAccountOperation: ResultOperation<(), TunnelManager.Error> {
 
         for (index, publicKey) in publicKeys.enumerated() {
             dispatchGroup.enter()
-            _ = apiProxy.deleteWireguardKey(token: accountToken, publicKey: publicKey, retryStrategy: .default) { result in
+            _ = apiProxy.deleteWireguardKey(accountNumber: accountToken, publicKey: publicKey, retryStrategy: .default) { result in
                 self.queue.async {
                     switch result {
                     case .success:
@@ -225,7 +225,7 @@ class SetAccountOperation: ResultOperation<(), TunnelManager.Error> {
     }
 
     private func pushNewAccountKey(accountToken: String, publicKey: PublicKey, completionHandler: @escaping CompletionHandler) {
-        _ = apiProxy.pushWireguardKey(token: accountToken, publicKey: publicKey, retryStrategy: .default) { result in
+        _ = apiProxy.pushWireguardKey(accountNumber: accountToken, publicKey: publicKey, retryStrategy: .default) { result in
             self.queue.async {
                 switch result {
                 case .success(let associatedAddresses):

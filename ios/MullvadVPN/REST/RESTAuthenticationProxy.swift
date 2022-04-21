@@ -20,9 +20,10 @@ extension REST {
 
         func getAccessToken(accountNumber: String, completion: @escaping CompletionHandler<AccessTokenData>) -> Cancellable {
             let request = AccessTokenRequest(accountNumber: accountNumber)
+            let responseDecoder = ResponseDecoder(decoder: Coding.makeJSONDecoderBetaAPI())
 
             let requestHandler = AnyRequestHandler(
-                createURLRequest: { endpoint in
+                createURLRequest: { endpoint, completion in
                     var requestBuilder = self.requestFactory.createURLRequestBuilder(
                         endpoint: endpoint,
                         method: .post,
@@ -32,16 +33,18 @@ extension REST {
                     do {
                         try requestBuilder.setHTTPBody(value: request)
 
-                        return .success(requestBuilder.getURLRequest())
+                        completion(.success(requestBuilder.getURLRequest()))
                     } catch {
-                        return .failure(.encodePayload(error))
+                        completion(.failure(.encodePayload(error)))
                     }
+
+                    return EmptyCancellable()
                 },
                 handleURLResponse: { response, data -> Result<AccessTokenData, REST.Error> in
                     if HTTPStatus.isSuccess(response.statusCode) {
-                        return ResponseHandling.decodeSuccessResponse(AccessTokenData.self, from: data)
+                        return responseDecoder.decodeSuccessResponse(AccessTokenData.self, from: data)
                     } else {
-                        return ResponseHandling.decodeErrorResponseAndMapToServerError(from: data)
+                        return responseDecoder.decodeErrorResponseAndMapToServerError(from: data)
                     }
                 }
             )

@@ -17,7 +17,7 @@ extension REST {
         private let addressCacheStore: AddressCache.Store
 
         private var networkTask: URLSessionTask?
-        private var authorizationTask: Cancellable?
+        private var createRequestTask: Cancellable?
 
         private let retryStrategy: RetryStrategy
         private var retryTimer: DispatchSourceTimer?
@@ -52,11 +52,11 @@ extension REST {
             dispatchQueue.async {
                 self.retryTimer?.cancel()
                 self.networkTask?.cancel()
-                self.authorizationTask?.cancel()
+                self.createRequestTask?.cancel()
 
                 self.retryTimer = nil
                 self.networkTask = nil
-                self.authorizationTask = nil
+                self.createRequestTask = nil
             }
         }
 
@@ -76,62 +76,20 @@ extension REST {
                 return
             }
 
-            let result = requestHandler.createURLRequest(endpoint: endpoint)
-            let request: URLRequest
-            switch result {
-            case .success(let anURLRequest):
-                request = anURLRequest
-
-            case .failure(let error):
-                didFailToCreateURLRequest(error)
-                return
-            }
-
-            guard let authorizationProvider = requestHandler.getAuthorizationProvider() else {
-                didReceiveURLRequest(request, endpoint: endpoint)
-                return
-            }
-
-            authorizationTask = authorizationProvider.getAuthorization { [weak self] result in
-                guard let self = self else { return }
-
+            createRequestTask = requestHandler.createURLRequest(endpoint: endpoint) { completion in
                 self.dispatchQueue.async {
-                    guard !self.isCancelled else {
-                        self.finish(completion: .cancelled)
-                        return
-                    }
-
-                    switch result {
-                    case .success(let authorization):
-                        self.didReceiveAuthorization(
-                            authorization,
-                            request: request,
-                            endpoint: endpoint
-                        )
+                    switch completion {
+                    case .success(let request):
+                        self.didReceiveURLRequest(request, endpoint: endpoint)
 
                     case .failure(let error):
-                        self.didFailToObtainAuthorization(error)
+                        self.didFailToCreateURLRequest(error)
 
                     case .cancelled:
                         self.finish(completion: .cancelled)
                     }
                 }
             }
-        }
-
-        private func didReceiveAuthorization(_ authorization: REST.Authorization, request: URLRequest, endpoint: AnyIPEndpoint) {
-            var requestBuilder = REST.RequestBuilder(request: request)
-            requestBuilder.setAuthorization(authorization)
-
-            didReceiveURLRequest(requestBuilder.getURLRequest(), endpoint: endpoint)
-        }
-
-        private func didFailToObtainAuthorization(_ error: REST.Error) {
-            dispatchPrecondition(condition: .onQueue(dispatchQueue))
-
-            logger.error(chainedError: error, message: "Failed to obtain authorization.", metadata: loggerMetadata)
-
-            finish(completion: .failure(error))
         }
 
         private func didReceiveURLRequest(_ urlRequest: URLRequest, endpoint: AnyIPEndpoint) {
