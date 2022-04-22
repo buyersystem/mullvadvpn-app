@@ -37,7 +37,7 @@ extension REST {
                         method: .get,
                         path: "/accounts/me"
                     )
-                    
+
                     return self.configuration.accessTokenManager
                         .getAccessToken(
                             accountNumber: accountNumber,
