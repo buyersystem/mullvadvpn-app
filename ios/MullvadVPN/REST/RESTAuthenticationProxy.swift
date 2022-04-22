@@ -16,10 +16,10 @@ extension REST {
                 configuration: configuration,
                 requestFactory: RequestFactory.withDefaultAPICredentials(
                     pathPrefix: "/auth/v1-beta1",
-                    bodyEncoder: Coding.makeJSONEncoder(type: .beta)
+                    bodyEncoder: Coding.makeJSONEncoder()
                 ),
                 responseDecoder: ResponseDecoder(
-                    decoder: Coding.makeJSONDecoder(type: .beta)
+                    decoder: Coding.makeJSONDecoder()
                 )
             )
         }
