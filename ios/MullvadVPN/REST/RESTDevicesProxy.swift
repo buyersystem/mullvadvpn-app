@@ -50,7 +50,7 @@ extension REST {
                                 requestBuilder.setAuthorization(.accessToken(tokenData.accessToken))
                                 return requestBuilder.getURLRequest()
                             }
-                            
+
                             completion(requestCompletion)
                         }
                 },
