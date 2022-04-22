@@ -71,8 +71,6 @@ extension REST {
     struct BetaAccountResponse: Decodable {
         let id: String
         let number: String
-        let prettyNumber: String
-        let isActive: Bool
         let expiry: Date
         let maxPorts: Int
         let canAdPorts: Bool
