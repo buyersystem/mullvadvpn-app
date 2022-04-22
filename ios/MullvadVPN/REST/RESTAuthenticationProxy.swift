@@ -24,7 +24,12 @@ extension REST {
             )
         }
 
-        func getAccessToken(accountNumber: String, completion: @escaping CompletionHandler<AccessTokenData>) -> Cancellable {
+        func getAccessToken(
+            accountNumber: String,
+            retryStrategy: REST.RetryStrategy,
+            completion: @escaping CompletionHandler<AccessTokenData>
+        ) -> Cancellable
+        {
             let requestHandler = AnyRequestHandler(
                 createURLRequest: { endpoint, completion in
                     var requestBuilder = self.requestFactory.createURLRequestBuilder(
@@ -55,7 +60,7 @@ extension REST {
 
             return addOperation(
                 name: "get-access-token",
-                retryStrategy: .default,
+                retryStrategy: retryStrategy,
                 requestHandler: requestHandler,
                 completionHandler: completion
             )
