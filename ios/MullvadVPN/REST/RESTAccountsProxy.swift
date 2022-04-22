@@ -29,7 +29,7 @@ extension REST {
                 createURLRequest: { endpoint, completion in
                     var requestBuilder = self.requestFactory.createURLRequestBuilder(
                         endpoint: endpoint,
-                        method: .post,
+                        method: .get,
                         path: "/accounts/me"
                     )
 
