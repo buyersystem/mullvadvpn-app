@@ -410,8 +410,6 @@ extension REST {
             completionHandler: @escaping CompletionHandler<Void>
         ) -> Cancellable
         {
-            let responseDecoder = ResponseDecoder(decoder: Coding.makeJSONDecoder())
-
             let requestHandler = AnyRequestHandler(
                 createURLRequest: { endpoint, completion in
                     var requestBuilder = self.requestFactory.createURLRequestBuilder(
@@ -434,7 +432,7 @@ extension REST {
                     if HTTPStatus.isSuccess(response.statusCode) {
                         return .success(())
                     } else {
-                        return responseDecoder.decodeErrorResponseAndMapToServerError(from: data)
+                        return self.responseDecoder.decodeErrorResponseAndMapToServerError(from: data)
                     }
                 }
             )
