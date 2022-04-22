@@ -13,70 +13,50 @@ extension REST {
 }
 
 extension REST.Coding {
-
-    enum CoderType {
-        case classic
-        case beta
-
-        fileprivate var dateEncodingStrategy: JSONEncoder.DateEncodingStrategy {
-            switch self {
-            case .classic:
-                return .iso8601
-
-            case .beta:
-                let dateFormatter = ISO8601DateFormatter()
-                dateFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-
-                return .custom({ date, encoder in
-                    var contaner = encoder.singleValueContainer()
-                    let value = dateFormatter.string(from: date)
-
-                    try contaner.encode(value)
-                })
-            }
-        }
-
-        fileprivate var dateDecodingStrategy: JSONDecoder.DateDecodingStrategy {
-            switch self {
-            case .classic:
-                return .iso8601
-
-            case .beta:
-                let dateFormatter = ISO8601DateFormatter()
-                dateFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-
-                return .custom({ decoder in
-                    let container = try decoder.singleValueContainer()
-                    let value = try container.decode(String.self)
-
-                    if let date = dateFormatter.date(from: value) {
-                        return date
-                    }
-
-                    throw DecodingError.dataCorruptedError(
-                        in: container,
-                        debugDescription: "Expected date string to be ISO8601-formatted."
-                    )
-                })
-            }
-        }
-    }
-
     /// Returns a JSON encoder used by REST API.
-    static func makeJSONEncoder(type: CoderType) -> JSONEncoder {
+    static func makeJSONEncoder() -> JSONEncoder {
         let encoder = JSONEncoder()
         encoder.keyEncodingStrategy = .convertToSnakeCase
         encoder.dataEncodingStrategy = .base64
-        encoder.dateEncodingStrategy = type.dateEncodingStrategy
+        encoder.dateEncodingStrategy = .iso8601
         return encoder
     }
 
     /// Returns a JSON decoder used by REST API.
-    static func makeJSONDecoder(type: CoderType) -> JSONDecoder {
+    static func makeJSONDecoder() -> JSONDecoder {
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         decoder.dataDecodingStrategy = .base64
-        decoder.dateDecodingStrategy = type.dateDecodingStrategy
+
+        let iso8601Formatter = ISO8601DateFormatter()
+
+        // Setup additional formatter to account for fractional seconds returned
+        // by some of the API calls.
+        lazy var iso8601WithSubSecondsFormatter: ISO8601DateFormatter = {
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions.insert(.withFractionalSeconds)
+            return formatter
+        }()
+
+        decoder.dateDecodingStrategy =  .custom({ decoder in
+            let container = try decoder.singleValueContainer()
+            let value = try container.decode(String.self)
+
+            let date = iso8601Formatter.date(from: value) ??
+                iso8601WithSubSecondsFormatter.date(from: value)
+
+            switch date {
+            case .some(let parsedDate):
+                return parsedDate
+
+            case .none:
+                throw DecodingError.dataCorruptedError(
+                    in: container,
+                    debugDescription: "Expected date string to be RFC3339 or ISO8601-formatted."
+                )
+            }
+        })
+
         return decoder
     }
 }

@@ -19,10 +19,10 @@ extension REST {
                 configuration: configuration,
                 requestFactory: RequestFactory.withDefaultAPICredentials(
                     pathPrefix: "/app/v1",
-                    bodyEncoder: Coding.makeJSONEncoder(type: .classic)
+                    bodyEncoder: Coding.makeJSONEncoder()
                 ),
                 responseDecoder: ResponseDecoder(
-                    decoder: Coding.makeJSONDecoder(type: .classic)
+                    decoder: Coding.makeJSONDecoder()
                 )
             )
         }
