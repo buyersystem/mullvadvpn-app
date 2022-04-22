@@ -8,8 +8,7 @@
 
 import Foundation
 import class WireGuardKitTypes.PublicKey
-import struct Network.IPv4Address
-import struct Network.IPv6Address
+import struct WireGuardKitTypes.IPAddressRange
 
 extension REST {
     class DevicesProxy: Proxy<AuthProxyConfiguration> {
@@ -79,9 +78,14 @@ extension REST {
         let pubkey: Data
         let hijackDNS: Bool
         let created: Date
-        let ipv4Address: IPv4Address
-        let ipv6Address: IPv6Address
+        let ipv4Address: IPAddressRange
+        let ipv6Address: IPAddressRange
         let ports: [Port]
+
+        private enum CodingKeys: String, CodingKey {
+            case hijackDNS = "hijackDns"
+            case id, name, pubkey, created, ipv4Address, ipv6Address, ports
+        }
     }
 
     struct Port: Decodable {
