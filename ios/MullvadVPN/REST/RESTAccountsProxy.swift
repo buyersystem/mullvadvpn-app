@@ -73,7 +73,7 @@ extension REST {
         let number: String
         let expiry: Date
         let maxPorts: Int
-        let canAdPorts: Bool
+        let canAddPorts: Bool
         let maxDevices: Int
         let canAddDevices: Bool
     }
