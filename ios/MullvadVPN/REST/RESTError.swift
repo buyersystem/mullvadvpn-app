@@ -86,7 +86,13 @@ extension REST {
                     comment: ""
                 )
             default:
-                return nil
+                let localizedString = NSLocalizedString(
+                    "UNKNOWN_ERROR_DESCRIPTION",
+                    tableName: "REST",
+                    value: "Unknown error: %@",
+                    comment: "Use %@ placeholder to place the error code into the localized string."
+                )
+                return String(format: localizedString, code)
             }
         }
 
