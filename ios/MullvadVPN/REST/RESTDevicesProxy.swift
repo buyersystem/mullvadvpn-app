@@ -27,7 +27,12 @@ extension REST {
             )
         }
 
-        func getDevices(accountNumber: String, completion: @escaping CompletionHandler<[Device]>) -> Cancellable {
+        func getDevices(
+            accountNumber: String,
+            retryStrategy: REST.RetryStrategy,
+            completion: @escaping CompletionHandler<[Device]>
+        ) -> Cancellable
+        {
             let requestHandler = AnyRequestHandler(
                 createURLRequest: { endpoint, completion in
                     var requestBuilder = self.requestFactory.createURLRequestBuilder(
@@ -37,12 +42,15 @@ extension REST {
                     )
 
                     return self.configuration.accessTokenManager
-                        .getAccessToken(accountNumber: accountNumber) { tokenCompletion in
+                        .getAccessToken(
+                            accountNumber: accountNumber,
+                            retryStrategy: retryStrategy
+                        ) { tokenCompletion in
                             let requestCompletion = tokenCompletion.map { tokenData -> URLRequest in
                                 requestBuilder.setAuthorization(.accessToken(tokenData.accessToken))
                                 return requestBuilder.getURLRequest()
                             }
-
+                            
                             completion(requestCompletion)
                         }
                 },
@@ -57,7 +65,7 @@ extension REST {
 
             return addOperation(
                 name: "get-devices",
-                retryStrategy: .default,
+                retryStrategy: retryStrategy,
                 requestHandler: requestHandler,
                 completionHandler: completion
             )

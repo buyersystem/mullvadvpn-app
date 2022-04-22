@@ -24,7 +24,12 @@ extension REST {
             )
         }
 
-        func getMyAccount(accountNumber: String, completion: @escaping CompletionHandler<BetaAccountResponse>) -> Cancellable {
+        func getMyAccount(
+            accountNumber: String,
+            retryStrategy: REST.RetryStrategy,
+            completion: @escaping CompletionHandler<BetaAccountResponse>
+        ) -> Cancellable
+        {
             let requestHandler = AnyRequestHandler(
                 createURLRequest: { endpoint, completion in
                     var requestBuilder = self.requestFactory.createURLRequestBuilder(
@@ -32,9 +37,12 @@ extension REST {
                         method: .get,
                         path: "/accounts/me"
                     )
-
+                    
                     return self.configuration.accessTokenManager
-                        .getAccessToken(accountNumber: accountNumber) { tokenCompletion in
+                        .getAccessToken(
+                            accountNumber: accountNumber,
+                            retryStrategy: retryStrategy
+                        ) { tokenCompletion in
                             let requestCompletion = tokenCompletion.map { tokenData -> URLRequest in
                                 requestBuilder.setAuthorization(.accessToken(tokenData.accessToken))
                                 return requestBuilder.getURLRequest()
@@ -53,7 +61,7 @@ extension REST {
 
             return addOperation(
                 name: "get-my-account",
-                retryStrategy: .default,
+                retryStrategy: retryStrategy,
                 requestHandler: requestHandler,
                 completionHandler: completion
             )
