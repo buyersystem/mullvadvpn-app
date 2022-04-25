@@ -22,7 +22,7 @@ extension REST {
         case server(REST.ServerErrorResponse)
 
         /// A failure to decode the error response from server
-        case decodeErrorResponse(Swift.Error)
+        case decodeErrorResponse(Swift.Error, Int)
 
         /// A failure to decode the success response from server
         case decodeSuccessResponse(Swift.Error)
@@ -35,8 +35,8 @@ extension REST {
                 return "Network error."
             case .server:
                 return "Server error."
-            case .decodeErrorResponse:
-                return "Failure to decode error response from server."
+            case .decodeErrorResponse(_, let statusCode):
+                return "Failure to decode error response from server. (HTTP status: \(statusCode))"
             case .decodeSuccessResponse:
                 return "Failure to decode success response from server."
             }
@@ -50,6 +50,7 @@ extension REST {
             case invalidAccount = "INVALID_ACCOUNT"
             case keyLimitReached = "KEY_LIMIT_REACHED"
             case pubKeyNotFound = "PUBKEY_NOT_FOUND"
+            case invalidAccessToken = "INVALID_ACCESS_TOKEN"
 
             static func ~= (pattern: Self, value: REST.ServerErrorResponse) -> Bool {
                 return pattern.rawValue == value.code
@@ -64,6 +65,9 @@ extension REST {
         }
         static var pubKeyNotFound: Code {
             return .pubKeyNotFound
+        }
+        static var invalidAccessToken: Code {
+            return .invalidAccessToken
         }
 
         let code: String
@@ -85,6 +89,13 @@ extension REST {
                     value: "Invalid account.",
                     comment: ""
                 )
+
+            case Code.invalidAccessToken.rawValue:
+                return NSLocalizedString(
+                    "INVALID_ACCESS_TOKEN_ERROR_DESCRIPTION",
+                    tableName: "REST",
+                    value: "Invalid access token.",
+                    comment: "")
             default:
                 let localizedString = NSLocalizedString(
                     "UNKNOWN_ERROR_DESCRIPTION",

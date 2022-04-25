@@ -46,7 +46,7 @@ extension REST {
                     if HTTPStatus.isSuccess(response.statusCode) {
                         return self.responseDecoder.decodeSuccessResponse(AccountResponse.self, from: data)
                     } else {
-                        return self.responseDecoder.decodeErrorResponseAndMapToServerError(from: data)
+                        return self.responseDecoder.decodeErrorResponseAndMapToServerError(from: data, response: response)
                     }
                 }
             )
@@ -78,7 +78,7 @@ extension REST {
                     if HTTPStatus.isSuccess(response.statusCode) {
                         return self.responseDecoder.decodeSuccessResponse([AnyIPEndpoint].self, from: data)
                     } else {
-                        return self.responseDecoder.decodeErrorResponseAndMapToServerError(from: data)
+                        return self.responseDecoder.decodeErrorResponseAndMapToServerError(from: data, response: response)
                     }
                 }
             )
@@ -121,7 +121,7 @@ extension REST {
                     } else if response.statusCode == HTTPStatus.notModified && etag != nil {
                         return .success(.notModified)
                     } else {
-                        return self.responseDecoder.decodeErrorResponseAndMapToServerError(from: data)
+                        return self.responseDecoder.decodeErrorResponseAndMapToServerError(from: data, response: response)
                     }
                 }
             )
@@ -156,7 +156,7 @@ extension REST {
                     if HTTPStatus.isSuccess(response.statusCode) {
                         return self.responseDecoder.decodeSuccessResponse(AccountResponse.self, from: data)
                     } else {
-                        return self.responseDecoder.decodeErrorResponseAndMapToServerError(from: data)
+                        return self.responseDecoder.decodeErrorResponseAndMapToServerError(from: data, response: response)
                     }
                 }
             )
@@ -196,7 +196,7 @@ extension REST {
                     if HTTPStatus.isSuccess(response.statusCode) {
                         return self.responseDecoder.decodeSuccessResponse(WireguardAddressesResponse.self, from: data)
                     } else {
-                        return self.responseDecoder.decodeErrorResponseAndMapToServerError(from: data)
+                        return self.responseDecoder.decodeErrorResponseAndMapToServerError(from: data, response: response)
                     }
                 }
             )
@@ -242,7 +242,7 @@ extension REST {
                     if HTTPStatus.isSuccess(response.statusCode) {
                         return self.responseDecoder.decodeSuccessResponse(WireguardAddressesResponse.self, from: data)
                     } else {
-                        return self.responseDecoder.decodeErrorResponseAndMapToServerError(from: data)
+                        return self.responseDecoder.decodeErrorResponseAndMapToServerError(from: data, response: response)
                     }
                 }
             )
@@ -290,7 +290,7 @@ extension REST {
                     if HTTPStatus.isSuccess(response.statusCode) {
                         return self.responseDecoder.decodeSuccessResponse(WireguardAddressesResponse.self, from: data)
                     } else {
-                        return self.responseDecoder.decodeErrorResponseAndMapToServerError(from: data)
+                        return self.responseDecoder.decodeErrorResponseAndMapToServerError(from: data, response: response)
                     }
                 }
             )
@@ -330,7 +330,7 @@ extension REST {
                     if HTTPStatus.isSuccess(response.statusCode) {
                         return .success(())
                     } else {
-                        return self.responseDecoder.decodeErrorResponseAndMapToServerError(from: data)
+                        return self.responseDecoder.decodeErrorResponseAndMapToServerError(from: data, response: response)
                     }
                 }
             )
@@ -383,7 +383,7 @@ extension REST {
                                 }
                             }
                     } else {
-                        return self.responseDecoder.decodeErrorResponseAndMapToServerError(from: data)
+                        return self.responseDecoder.decodeErrorResponseAndMapToServerError(from: data, response: response)
                     }
                 }
             )
@@ -423,7 +423,7 @@ extension REST {
                     if HTTPStatus.isSuccess(response.statusCode) {
                         return .success(())
                     } else {
-                        return self.responseDecoder.decodeErrorResponseAndMapToServerError(from: data)
+                        return self.responseDecoder.decodeErrorResponseAndMapToServerError(from: data, response: response)
                     }
                 }
             )
