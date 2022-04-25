@@ -27,26 +27,27 @@ extension REST {
         case pending(Cancellable)
     }
 
-    class AnyRequestHandler: RESTRequestHandler {
-        typealias CreateURLRequestBlock = (AnyIPEndpoint, REST.Authorization?) -> Result<URLRequest, REST.Error>
-        typealias RequestAuthorizationBlock = (@escaping AuthorizationCompletion) -> AuthorizationResult
+    final class AnyRequestHandler: RESTRequestHandler {
+        private let _createURLRequest: (AnyIPEndpoint, REST.Authorization?) -> Result<URLRequest, REST.Error>
+        private let _requestAuthorization: ((@escaping AuthorizationCompletion) -> AuthorizationResult)?
 
-        private let _createURLRequest: CreateURLRequestBlock
-        private let _requestAuthorization: RequestAuthorizationBlock?
-
-        init(
-            createURLRequest: @escaping CreateURLRequestBlock
-        ) {
-            _createURLRequest = createURLRequest
+        init(createURLRequest: @escaping (AnyIPEndpoint) -> Result<URLRequest, REST.Error>) {
+            _createURLRequest = { endpoint, authorization in
+                createURLRequest(endpoint)
+            }
             _requestAuthorization = nil
         }
 
         init(
-            createURLRequest: @escaping CreateURLRequestBlock,
-            requestAuthorization: @escaping RequestAuthorizationBlock
+            createURLRequest: @escaping (AnyIPEndpoint, REST.Authorization) -> Result<URLRequest, REST.Error>,
+            requestAuthorization: @escaping (@escaping AuthorizationCompletion) -> Cancellable
         ) {
-            _createURLRequest = createURLRequest
-            _requestAuthorization = requestAuthorization
+            _createURLRequest = { endpoint, authorization in
+                return createURLRequest(endpoint, authorization!)
+            }
+            _requestAuthorization = { completion in
+                return .pending(requestAuthorization(completion))
+            }
         }
 
         func createURLRequest(
