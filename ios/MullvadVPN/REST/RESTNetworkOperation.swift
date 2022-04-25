@@ -19,6 +19,9 @@ extension REST {
         private var networkTask: URLSessionTask?
         private var authorizationTask: Cancellable?
 
+        private var requiresAuthorization = false
+        private var retryInvalidAccessTokenError = true
+
         private let retryStrategy: RetryStrategy
         private var retryTimer: DispatchSourceTimer?
         private var retryCount = 0
@@ -76,6 +79,8 @@ extension REST {
 
             let authorizationResult = requestHandler.requestAuthorization { completion in
                 self.dispatchQueue.async {
+                    assert(self.requiresAuthorization, "Illegal use of completion handler.")
+
                     switch completion {
                     case .success(let authorization):
                         self.didReceiveAuthorization(authorization)
@@ -91,9 +96,11 @@ extension REST {
 
             switch authorizationResult {
             case .pending(let task):
+                requiresAuthorization = true
                 authorizationTask = task
 
             case .notRequired:
+                requiresAuthorization = false
                 didReceiveAuthorization(nil)
             }
         }
@@ -197,10 +204,12 @@ extension REST {
 
             // Check if retry count is not exceeded.
             guard retryCount < retryStrategy.maxRetryCount else {
-                logger.debug(
-                    "Ran out of retry attempts (\(retryStrategy.maxRetryCount))",
-                    metadata: loggerMetadata
-                )
+                if retryStrategy.maxRetryCount > 0 {
+                    logger.debug(
+                        "Ran out of retry attempts (\(retryStrategy.maxRetryCount))",
+                        metadata: loggerMetadata
+                    )
+                }
 
                 finish(completion: OperationCompletion(result: .failure(.network(urlError))))
                 return
@@ -237,7 +246,18 @@ extension REST {
 
             let result = requestHandler.handleURLResponse(response, data: data)
 
-            finish(completion: OperationCompletion(result: result))
+            if case .server(.invalidAccessToken) = result.error,
+                requiresAuthorization, retryInvalidAccessTokenError
+            {
+                logger.debug(
+                    "Received invalid access token error. Retry once.",
+                    metadata: loggerMetadata
+                )
+                retryInvalidAccessTokenError = false
+                startRequest()
+            } else {
+                finish(completion: OperationCompletion(result: result))
+            }
         }
     }
 

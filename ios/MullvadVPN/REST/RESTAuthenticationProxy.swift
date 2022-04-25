@@ -54,7 +54,7 @@ extension REST {
                     if HTTPStatus.isSuccess(response.statusCode) {
                         return self.responseDecoder.decodeSuccessResponse(AccessTokenData.self, from: data)
                     } else {
-                        return self.responseDecoder.decodeErrorResponseAndMapToServerError(from: data)
+                        return self.responseDecoder.decodeErrorResponseAndMapToServerError(from: data, response: response)
                     }
                 }
             )

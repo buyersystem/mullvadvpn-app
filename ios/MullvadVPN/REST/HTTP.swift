@@ -22,6 +22,7 @@ struct HTTPMethod: RawRepresentable {
 
 enum HTTPStatus {
     static let notModified = 304
+    static let unauthorized = 401
 
     static func isSuccess(_ code: Int) -> Bool {
         return (200..<300).contains(code)
