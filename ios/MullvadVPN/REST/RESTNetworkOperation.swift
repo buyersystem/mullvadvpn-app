@@ -11,7 +11,9 @@ import Logging
 
 extension REST {
     class NetworkOperation<Success>: ResultOperation<Success, REST.Error> {
-        private let requestHandler: AnyRequestHandler<Success>
+        private let requestHandler: AnyRequestHandler
+        private let responseHandler: AnyResponseHandler<Success>
+
         private let dispatchQueue: DispatchQueue
         private let urlSession: URLSession
         private let addressCacheStore: AddressCache.Store
@@ -34,7 +36,8 @@ extension REST {
             dispatchQueue: DispatchQueue,
             configuration: ProxyConfiguration,
             retryStrategy: RetryStrategy,
-            requestHandler: AnyRequestHandler<Success>,
+            requestHandler: AnyRequestHandler,
+            responseHandler: AnyResponseHandler<Success>,
             completionHandler: @escaping CompletionHandler
         )
         {
@@ -43,6 +46,7 @@ extension REST {
             self.addressCacheStore = configuration.addressCacheStore
             self.retryStrategy = retryStrategy
             self.requestHandler = requestHandler
+            self.responseHandler = responseHandler
 
             loggerMetadata = ["name": .string(name)]
 
@@ -244,7 +248,7 @@ extension REST {
         private func didReceiveURLResponse(_ response: HTTPURLResponse, data: Data, endpoint: AnyIPEndpoint) {
             dispatchPrecondition(condition: .onQueue(dispatchQueue))
 
-            let result = requestHandler.handleURLResponse(response, data: data)
+            let result = responseHandler.handleURLResponse(response, data: data)
 
             if case .server(.invalidAccessToken) = result.error,
                 requiresAuthorization, retryInvalidAccessTokenError

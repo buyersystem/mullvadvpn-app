@@ -22,7 +22,7 @@ extension REST {
         case server(REST.ServerErrorResponse)
 
         /// A failure to decode the error response from server
-        case decodeErrorResponse(Swift.Error, Int)
+        case decodeErrorResponse(Swift.Error)
 
         /// A failure to decode the success response from server
         case decodeSuccessResponse(Swift.Error)
@@ -35,8 +35,8 @@ extension REST {
                 return "Network error."
             case .server:
                 return "Server error."
-            case .decodeErrorResponse(_, let statusCode):
-                return "Failure to decode error response from server. (HTTP status: \(statusCode))"
+            case .decodeErrorResponse(_):
+                return "Failure to decode error response from server."
             case .decodeSuccessResponse:
                 return "Failure to decode success response from server."
             }

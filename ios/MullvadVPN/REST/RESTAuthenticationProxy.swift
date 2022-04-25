@@ -30,39 +30,36 @@ extension REST {
             completion: @escaping CompletionHandler<AccessTokenData>
         ) -> Cancellable
         {
-            let requestHandler = AnyRequestHandler(
-                createURLRequest: { endpoint, authorization in
-                    var requestBuilder = self.requestFactory.createURLRequestBuilder(
-                        endpoint: endpoint,
-                        method: .post,
-                        path: "/token"
-                    )
+            let requestHandler = AnyRequestHandler { endpoint, authorization in
+                var requestBuilder = self.requestFactory.createURLRequestBuilder(
+                    endpoint: endpoint,
+                    method: .post,
+                    path: "/token"
+                )
 
-                    return Result {
-                        let request = AccessTokenRequest(accountNumber: accountNumber)
+                return Result {
+                    let request = AccessTokenRequest(accountNumber: accountNumber)
 
-                        try requestBuilder.setHTTPBody(value: request)
-                    }
-                    .mapError { error in
-                        return .encodePayload(error)
-                    }
-                    .map { _ in
-                        return requestBuilder.getURLRequest()
-                    }
-                },
-                handleURLResponse: { response, data -> Result<AccessTokenData, REST.Error> in
-                    if HTTPStatus.isSuccess(response.statusCode) {
-                        return self.responseDecoder.decodeSuccessResponse(AccessTokenData.self, from: data)
-                    } else {
-                        return self.responseDecoder.decodeErrorResponseAndMapToServerError(from: data, response: response)
-                    }
+                    try requestBuilder.setHTTPBody(value: request)
                 }
+                .mapError { error in
+                    return .encodePayload(error)
+                }
+                .map { _ in
+                    return requestBuilder.getURLRequest()
+                }
+            }
+
+            let responseHandler = REST.defaultResponseHandler(
+                decoding: AccessTokenData.self,
+                with: responseDecoder
             )
 
             return addOperation(
                 name: "get-access-token",
                 retryStrategy: retryStrategy,
                 requestHandler: requestHandler,
+                responseHandler: responseHandler,
                 completionHandler: completion
             )
         }
