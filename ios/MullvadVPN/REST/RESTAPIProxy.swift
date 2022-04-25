@@ -33,16 +33,14 @@ extension REST {
         ) -> Cancellable
         {
             let requestHandler = AnyRequestHandler(
-                createURLRequest: { endpoint, completion in
+                createURLRequest: { endpoint, _ in
                     let request = self.requestFactory.createURLRequest(
                         endpoint: endpoint,
                         method: .post,
                         path: "accounts"
                     )
 
-                    completion(.success(request))
-
-                    return EmptyCancellable()
+                    return .success(request)
                 },
                 handleURLResponse: { response, data -> Result<AccountResponse, REST.Error> in
                     if HTTPStatus.isSuccess(response.statusCode) {
@@ -67,16 +65,14 @@ extension REST {
         ) -> Cancellable
         {
             let requestHandler = AnyRequestHandler(
-                createURLRequest: { endpoint, completion in
+                createURLRequest: { endpoint, authorization in
                     let request = self.requestFactory.createURLRequest(
                         endpoint: endpoint,
                         method: .get,
                         path: "api-addrs"
                     )
 
-                    completion(.success(request))
-
-                    return EmptyCancellable()
+                    return .success(request)
                 },
                 handleURLResponse: { response, data -> Result<[AnyIPEndpoint], REST.Error> in
                     if HTTPStatus.isSuccess(response.statusCode) {
@@ -102,7 +98,7 @@ extension REST {
         ) -> Cancellable
         {
             let requestHandler = AnyRequestHandler(
-                createURLRequest: { endpoint, completion in
+                createURLRequest: { endpoint, authorization in
                     var requestBuilder = self.requestFactory.createURLRequestBuilder(
                         endpoint: endpoint,
                         method: .get,
@@ -113,9 +109,7 @@ extension REST {
                         requestBuilder.setETagHeader(etag: etag)
                     }
 
-                    completion(.success(requestBuilder.getURLRequest()))
-
-                    return EmptyCancellable()
+                    return .success(requestBuilder.getURLRequest())
                 },
                 handleURLResponse: { response, data -> Result<ServerRelaysCacheResponse, REST.Error> in
                     if HTTPStatus.isSuccess(response.statusCode) {
@@ -147,7 +141,7 @@ extension REST {
         ) -> Cancellable
         {
             let requestHandler = AnyRequestHandler(
-                createURLRequest: { endpoint, completion in
+                createURLRequest: { endpoint, authorization in
                     var requestBuilder = self.requestFactory
                         .createURLRequestBuilder(
                             endpoint: endpoint,
@@ -156,9 +150,7 @@ extension REST {
                         )
                     requestBuilder.setAuthorization(.accountNumber(accountNumber))
 
-                    completion(.success(requestBuilder.getURLRequest()))
-
-                    return EmptyCancellable()
+                    return .success(requestBuilder.getURLRequest())
                 },
                 handleURLResponse: { response, data -> Result<AccountResponse, REST.Error> in
                     if HTTPStatus.isSuccess(response.statusCode) {
@@ -185,7 +177,7 @@ extension REST {
         ) -> Cancellable
         {
             let requestHandler = AnyRequestHandler(
-                createURLRequest: { endpoint, completion in
+                createURLRequest: { endpoint, authorization in
                     let urlEncodedPublicKey = publicKey.base64Key
                         .addingPercentEncoding(withAllowedCharacters: .alphanumerics)!
                     let path = "wireguard-keys/".appending(urlEncodedPublicKey)
@@ -198,9 +190,7 @@ extension REST {
                         )
                     requestBuilder.setAuthorization(.accountNumber(accountNumber))
 
-                    completion(.success(requestBuilder.getURLRequest()))
-
-                    return EmptyCancellable()
+                    return .success(requestBuilder.getURLRequest())
                 },
                 handleURLResponse: { response, data -> Result<WireguardAddressesResponse, REST.Error> in
                     if HTTPStatus.isSuccess(response.statusCode) {
@@ -227,7 +217,7 @@ extension REST {
         ) -> Cancellable
         {
             let requestHandler = AnyRequestHandler(
-                createURLRequest: { endpoint, completion in
+                createURLRequest: { endpoint, authorization in
                     var requestBuilder = self.requestFactory.createURLRequestBuilder(
                         endpoint: endpoint,
                         method: .post,
@@ -235,17 +225,18 @@ extension REST {
                     )
                     requestBuilder.setAuthorization(.accountNumber(accountNumber))
 
-                    do {
+                    return Result {
                         let body = PushWireguardKeyRequest(
                             pubkey: publicKey.rawValue
                         )
                         try requestBuilder.setHTTPBody(value: body)
-                        completion(.success(requestBuilder.getURLRequest()))
-                    } catch {
-                        completion(.failure(.encodePayload(error)))
                     }
-
-                    return EmptyCancellable()
+                    .mapError { error in
+                        return .encodePayload(error)
+                    }
+                    .map { _ in
+                        return requestBuilder.getURLRequest()
+                    }
                 },
                 handleURLResponse: { response, data -> Result<WireguardAddressesResponse, REST.Error> in
                     if HTTPStatus.isSuccess(response.statusCode) {
@@ -273,7 +264,7 @@ extension REST {
         ) -> Cancellable
         {
             let requestHandler = AnyRequestHandler(
-                createURLRequest: { endpoint, completion in
+                createURLRequest: { endpoint, authorization in
                     var requestBuilder = self.requestFactory.createURLRequestBuilder(
                         endpoint: endpoint,
                         method: .post,
@@ -281,19 +272,19 @@ extension REST {
                     )
                     requestBuilder.setAuthorization(.accountNumber(accountNumber))
 
-                    do {
+                    return Result {
                         let body = ReplaceWireguardKeyRequest(
                             old: oldPublicKey.rawValue,
                             new: newPublicKey.rawValue
                         )
                         try requestBuilder.setHTTPBody(value: body)
-
-                        completion(.success(requestBuilder.getURLRequest()))
-                    } catch {
-                        completion(.failure(.encodePayload(error)))
                     }
-
-                    return EmptyCancellable()
+                    .mapError { error in
+                        return .encodePayload(error)
+                    }
+                    .map { _ in
+                        return requestBuilder.getURLRequest()
+                    }
                 },
                 handleURLResponse: { response, data -> Result<WireguardAddressesResponse, REST.Error> in
                     if HTTPStatus.isSuccess(response.statusCode) {
@@ -320,7 +311,7 @@ extension REST {
         ) -> Cancellable
         {
             let requestHandler = AnyRequestHandler(
-                createURLRequest: { endpoint, completion in
+                createURLRequest: { endpoint, authorization in
                     let urlEncodedPublicKey = publicKey.base64Key
                         .addingPercentEncoding(withAllowedCharacters: .alphanumerics)!
 
@@ -333,9 +324,7 @@ extension REST {
                         )
                     requestBuilder.setAuthorization(.accountNumber(accountNumber))
 
-                    completion(.success(requestBuilder.getURLRequest()))
-
-                    return EmptyCancellable()
+                    return .success(requestBuilder.getURLRequest())
                 },
                 handleURLResponse: { response, data -> Result<Void, REST.Error> in
                     if HTTPStatus.isSuccess(response.statusCode) {
@@ -361,7 +350,7 @@ extension REST {
         ) -> Cancellable
         {
             let requestHandler = AnyRequestHandler(
-                createURLRequest: { endpoint, completion in
+                createURLRequest: { endpoint, authorization in
                     var requestBuilder = self.requestFactory
                         .createURLRequestBuilder(
                             endpoint: endpoint,
@@ -370,16 +359,18 @@ extension REST {
                         )
                     requestBuilder.setAuthorization(.accountNumber(accountNumber))
 
-                    do {
-                        let body = CreateApplePaymentRequest(receiptString: receiptString)
+                    return Result {
+                        let body = CreateApplePaymentRequest(
+                            receiptString: receiptString
+                        )
                         try requestBuilder.setHTTPBody(value: body)
-
-                        completion(.success(requestBuilder.getURLRequest()))
-                    } catch {
-                        completion(.failure(.encodePayload(error)))
                     }
-
-                    return EmptyCancellable()
+                    .mapError { error in
+                        return .encodePayload(error)
+                    }
+                    .map { _ in
+                        return requestBuilder.getURLRequest()
+                    }
                 },
                 handleURLResponse: { response, data -> Result<CreateApplePaymentResponse, REST.Error> in
                     if HTTPStatus.isSuccess(response.statusCode) {
@@ -411,22 +402,22 @@ extension REST {
         ) -> Cancellable
         {
             let requestHandler = AnyRequestHandler(
-                createURLRequest: { endpoint, completion in
+                createURLRequest: { endpoint, authorization in
                     var requestBuilder = self.requestFactory.createURLRequestBuilder(
                         endpoint: endpoint,
                         method: .post,
                         path: "problem-report"
                     )
 
-                    do {
+                    return Result {
                         try requestBuilder.setHTTPBody(value: body)
-
-                        completion(.success(requestBuilder.getURLRequest()))
-                    } catch {
-                        completion(.failure(.encodePayload(error)))
                     }
-
-                    return EmptyCancellable()
+                    .mapError { error in
+                        return .encodePayload(error)
+                    }
+                    .map { _ in
+                        return requestBuilder.getURLRequest()
+                    }
                 },
                 handleURLResponse: { response, data -> Result<Void, REST.Error> in
                     if HTTPStatus.isSuccess(response.statusCode) {
