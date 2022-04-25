@@ -18,8 +18,8 @@ protocol RESTRequestHandler {
 extension REST {
 
     enum AuthorizationResult {
-        /// Authorizatiton is not required.
-        case notRequired
+        /// There is no requirement for authorizing this request.
+        case noRequirement
 
         /// Authorizatiton request is initiated.
         /// Associated value contains a handle that can be used to cancel
@@ -59,7 +59,7 @@ extension REST {
         func requestAuthorization(
             completion: @escaping (OperationCompletion<REST.Authorization, REST.Error>) -> Void
         ) -> REST.AuthorizationResult {
-            return _requestAuthorization?(completion) ?? .notRequired
+            return _requestAuthorization?(completion) ?? .noRequirement
         }
     }
 
