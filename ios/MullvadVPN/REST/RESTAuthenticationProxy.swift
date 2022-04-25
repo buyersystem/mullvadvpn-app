@@ -31,23 +31,24 @@ extension REST {
         ) -> Cancellable
         {
             let requestHandler = AnyRequestHandler(
-                createURLRequest: { endpoint, completion in
+                createURLRequest: { endpoint, authorization in
                     var requestBuilder = self.requestFactory.createURLRequestBuilder(
                         endpoint: endpoint,
                         method: .post,
                         path: "/token"
                     )
 
-                    do {
+                    return Result {
                         let request = AccessTokenRequest(accountNumber: accountNumber)
+
                         try requestBuilder.setHTTPBody(value: request)
-
-                        completion(.success(requestBuilder.getURLRequest()))
-                    } catch {
-                        completion(.failure(.encodePayload(error)))
                     }
-
-                    return EmptyCancellable()
+                    .mapError { error in
+                        return .encodePayload(error)
+                    }
+                    .map { _ in
+                        return requestBuilder.getURLRequest()
+                    }
                 },
                 handleURLResponse: { response, data -> Result<AccessTokenData, REST.Error> in
                     if HTTPStatus.isSuccess(response.statusCode) {

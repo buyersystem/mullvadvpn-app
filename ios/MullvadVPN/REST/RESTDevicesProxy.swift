@@ -33,25 +33,27 @@ extension REST {
         ) -> Cancellable
         {
             let requestHandler = AnyRequestHandler(
-                createURLRequest: { endpoint, completion in
+                createURLRequest: { endpoint, authorization in
                     var requestBuilder = self.requestFactory.createURLRequestBuilder(
                         endpoint: endpoint,
                         method: .get,
                         path: "/devices"
                     )
 
-                    return self.configuration.accessTokenManager
+                    requestBuilder.setAuthorization(authorization!)
+
+                    return .success(requestBuilder.getURLRequest())
+                },
+                requestAuthorization: { completion in
+                    let task = self.configuration.accessTokenManager
                         .getAccessToken(
                             accountNumber: accountNumber,
                             retryStrategy: retryStrategy
-                        ) { tokenCompletion in
-                            let requestCompletion = tokenCompletion.map { tokenData -> URLRequest in
-                                requestBuilder.setAuthorization(.accessToken(tokenData.accessToken))
-                                return requestBuilder.getURLRequest()
-                            }
-
-                            completion(requestCompletion)
+                        ) { operationCompletion in
+                            completion(operationCompletion.map { REST.Authorization.accessToken($0.accessToken) })
                         }
+
+                    return .pending(task)
                 },
                 handleURLResponse: { response, data -> Result<[Device], REST.Error> in
                     if HTTPStatus.isSuccess(response.statusCode) {

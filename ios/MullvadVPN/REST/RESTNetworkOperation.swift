@@ -17,7 +17,7 @@ extension REST {
         private let addressCacheStore: AddressCache.Store
 
         private var networkTask: URLSessionTask?
-        private var createRequestTask: Cancellable?
+        private var authorizationTask: Cancellable?
 
         private let retryStrategy: RetryStrategy
         private var retryTimer: DispatchSourceTimer?
@@ -52,23 +52,21 @@ extension REST {
             dispatchQueue.async {
                 self.retryTimer?.cancel()
                 self.networkTask?.cancel()
-                self.createRequestTask?.cancel()
+                self.authorizationTask?.cancel()
 
                 self.retryTimer = nil
                 self.networkTask = nil
-                self.createRequestTask = nil
+                self.authorizationTask = nil
             }
         }
 
         override func main() {
             dispatchQueue.async {
-                let endpoint = self.addressCacheStore.getCurrentEndpoint()
-
-                self.sendRequest(endpoint: endpoint)
+                self.startRequest()
             }
         }
 
-        private func sendRequest(endpoint: AnyIPEndpoint) {
+        private func startRequest() {
             dispatchPrecondition(condition: .onQueue(dispatchQueue))
 
             guard !isCancelled else {
@@ -76,28 +74,75 @@ extension REST {
                 return
             }
 
-            createRequestTask = requestHandler.createURLRequest(endpoint: endpoint) { completion in
+            let authorizationResult = requestHandler.requestAuthorization { completion in
                 self.dispatchQueue.async {
                     switch completion {
-                    case .success(let request):
-                        self.didReceiveURLRequest(request, endpoint: endpoint)
+                    case .success(let authorization):
+                        self.didReceiveAuthorization(authorization)
 
                     case .failure(let error):
-                        self.didFailToCreateURLRequest(error)
+                        self.didFailToRequestAuthorization(error)
 
                     case .cancelled:
                         self.finish(completion: .cancelled)
                     }
                 }
             }
+
+            switch authorizationResult {
+            case .pending(let task):
+                authorizationTask = task
+
+            case .notRequired:
+                didReceiveAuthorization(nil)
+            }
+        }
+
+        private func didReceiveAuthorization(_ authorization: REST.Authorization?) {
+            dispatchPrecondition(condition: .onQueue(dispatchQueue))
+
+            guard !isCancelled else {
+                finish(completion: .cancelled)
+                return
+            }
+
+            let endpoint = self.addressCacheStore.getCurrentEndpoint()
+
+            let result = requestHandler.createURLRequest(
+                endpoint: endpoint,
+                authorization: authorization
+            )
+
+            switch result {
+            case .success(let request):
+                didReceiveURLRequest(request, endpoint: endpoint)
+
+            case .failure(let error):
+                didFailToCreateURLRequest(error)
+            }
+        }
+
+        private func didFailToRequestAuthorization(_ error: REST.Error) {
+            dispatchPrecondition(condition: .onQueue(dispatchQueue))
+
+            logger.error(
+                chainedError: error,
+                message: "Failed to request authorization.",
+                metadata: loggerMetadata
+            )
+
+            finish(completion: .failure(error))
         }
 
         private func didReceiveURLRequest(_ urlRequest: URLRequest, endpoint: AnyIPEndpoint) {
             dispatchPrecondition(condition: .onQueue(dispatchQueue))
 
-            logger.debug("Executing request using \(endpoint).", metadata: loggerMetadata)
+            logger.debug(
+                "Executing request using \(endpoint).",
+                metadata: loggerMetadata
+            )
 
-            networkTask = self.urlSession.dataTask(with: urlRequest) { [weak self] data, response, error in
+            networkTask = urlSession.dataTask(with: urlRequest) { [weak self] data, response, error in
                 guard let self = self else { return }
 
                 self.dispatchQueue.async {
@@ -120,7 +165,11 @@ extension REST {
         private func didFailToCreateURLRequest(_ error: REST.Error) {
             dispatchPrecondition(condition: .onQueue(dispatchQueue))
 
-            logger.error(chainedError: error, message: "Failed to create URLRequest.", metadata: loggerMetadata)
+            logger.error(
+                chainedError: error,
+                message: "Failed to create URLRequest.",
+                metadata: loggerMetadata
+            )
 
             finish(completion: .failure(error))
         }
@@ -128,18 +177,16 @@ extension REST {
         private func didReceiveURLError(_ urlError: URLError, endpoint: AnyIPEndpoint) {
             dispatchPrecondition(condition: .onQueue(dispatchQueue))
 
-            let retryEndpoint: AnyIPEndpoint
-
             switch urlError.code {
             case .cancelled:
                 finish(completion: .cancelled)
                 return
 
             case .notConnectedToInternet, .internationalRoamingOff, .callIsActive:
-                retryEndpoint = addressCacheStore.getCurrentEndpoint()
+                break
 
             default:
-                retryEndpoint = addressCacheStore.selectNextEndpoint(endpoint)
+                _ = addressCacheStore.selectNextEndpoint(endpoint)
             }
 
             logger.error(
@@ -150,7 +197,10 @@ extension REST {
 
             // Check if retry count is not exceeded.
             guard retryCount < retryStrategy.maxRetryCount else {
-                logger.debug("Ran out of retry attempts (\(retryStrategy.maxRetryCount))", metadata: loggerMetadata)
+                logger.debug(
+                    "Ran out of retry attempts (\(retryStrategy.maxRetryCount))",
+                    metadata: loggerMetadata
+                )
 
                 finish(completion: OperationCompletion(result: .failure(.network(urlError))))
                 return
@@ -161,7 +211,7 @@ extension REST {
 
             // Retry immediatly if retry delay is set to never.
             guard retryStrategy.retryDelay != .never else {
-                sendRequest(endpoint: retryEndpoint)
+                startRequest()
                 return
             }
 
@@ -169,7 +219,7 @@ extension REST {
             let timer = DispatchSource.makeTimerSource(queue: dispatchQueue)
 
             timer.setEventHandler { [weak self] in
-                self?.sendRequest(endpoint: retryEndpoint)
+                self?.startRequest()
             }
 
             timer.setCancelHandler { [weak self] in
