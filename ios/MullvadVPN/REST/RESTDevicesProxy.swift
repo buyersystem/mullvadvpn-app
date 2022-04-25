@@ -50,7 +50,9 @@ extension REST {
                             accountNumber: accountNumber,
                             retryStrategy: retryStrategy
                         ) { operationCompletion in
-                            completion(operationCompletion.map { REST.Authorization.accessToken($0.accessToken) })
+                            completion(operationCompletion.map { tokenData in
+                                return .accessToken(tokenData.accessToken)
+                            })
                         }
 
                     return .pending(task)
