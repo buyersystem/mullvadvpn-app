@@ -54,20 +54,19 @@ extension REST {
                         }
 
                     return .pending(task)
-                },
-                handleURLResponse: { response, data -> Result<BetaAccountResponse, REST.Error> in
-                    if HTTPStatus.isSuccess(response.statusCode) {
-                        return self.responseDecoder.decodeSuccessResponse(BetaAccountResponse.self, from: data)
-                    } else {
-                        return self.responseDecoder.decodeErrorResponseAndMapToServerError(from: data, response: response)
-                    }
                 }
+            )
+
+            let responseHandler = REST.defaultResponseHandler(
+                decoding: BetaAccountResponse.self,
+                with: responseDecoder
             )
 
             return addOperation(
                 name: "get-my-account",
                 retryStrategy: retryStrategy,
                 requestHandler: requestHandler,
+                responseHandler: responseHandler,
                 completionHandler: completion
             )
         }

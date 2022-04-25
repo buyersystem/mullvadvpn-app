@@ -45,7 +45,8 @@ extension REST {
         func addOperation<Success>(
             name: String,
             retryStrategy: REST.RetryStrategy,
-            requestHandler: AnyRequestHandler<Success>,
+            requestHandler: REST.AnyRequestHandler,
+            responseHandler: REST.AnyResponseHandler<Success>,
             completionHandler: @escaping NetworkOperation<Success>.CompletionHandler
         ) -> Cancellable
         {
@@ -55,6 +56,7 @@ extension REST {
                 configuration: configuration,
                 retryStrategy: retryStrategy,
                 requestHandler: requestHandler,
+                responseHandler: responseHandler,
                 completionHandler: completionHandler
             )
 

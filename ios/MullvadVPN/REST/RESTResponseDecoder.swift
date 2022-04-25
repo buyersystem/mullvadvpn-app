@@ -24,21 +24,23 @@ extension REST {
                 }
         }
 
-        /// Parse JSON response in case of error (Any HTTP code except 2xx).
-        func decodeErrorResponse(from data: Data, response: HTTPURLResponse) -> Result<REST.ServerErrorResponse, REST.Error> {
+        /// Parse server error response from JSON.
+        func decodeErrorResponse(from data: Data) -> Result<REST.ServerErrorResponse, REST.Error> {
             return Result { () -> REST.ServerErrorResponse in
                 return try decoder.decode(REST.ServerErrorResponse.self, from: data)
             }
             .mapError { error in
-                return .decodeErrorResponse(error, response.statusCode)
+                return .decodeErrorResponse(error)
             }
         }
 
-        func decodeErrorResponseAndMapToServerError<T>(from data: Data, response: HTTPURLResponse) -> Result<T, REST.Error> {
-            return decodeErrorResponse(from: data, response: response)
+        /// Parse server error response from JSON and map it `RESTError.server` error kind.
+        func decodeErrorResponseAndMapToServerError<T>(from data: Data) -> Result<T, REST.Error> {
+            return decodeErrorResponse(from: data)
                 .flatMap { serverError in
                     return .failure(.server(serverError))
                 }
         }
     }
+    
 }
