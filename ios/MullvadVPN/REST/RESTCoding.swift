@@ -38,7 +38,7 @@ extension REST.Coding {
             return formatter
         }()
 
-        decoder.dateDecodingStrategy =  .custom({ decoder in
+        decoder.dateDecodingStrategy = .custom({ decoder in
             let container = try decoder.singleValueContainer()
             let value = try container.decode(String.self)
 
