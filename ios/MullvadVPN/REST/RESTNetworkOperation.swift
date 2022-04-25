@@ -103,7 +103,7 @@ extension REST {
                 requiresAuthorization = true
                 authorizationTask = task
 
-            case .notRequired:
+            case .noRequirement:
                 requiresAuthorization = false
                 didReceiveAuthorization(nil)
             }
