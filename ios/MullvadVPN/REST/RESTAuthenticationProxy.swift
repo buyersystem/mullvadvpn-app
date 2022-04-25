@@ -30,7 +30,7 @@ extension REST {
             completion: @escaping CompletionHandler<AccessTokenData>
         ) -> Cancellable
         {
-            let requestHandler = AnyRequestHandler { endpoint, authorization in
+            let requestHandler = AnyRequestHandler { endpoint in
                 var requestBuilder = self.requestFactory.createURLRequestBuilder(
                     endpoint: endpoint,
                     method: .post,

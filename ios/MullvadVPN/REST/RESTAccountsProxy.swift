@@ -38,12 +38,12 @@ extension REST {
                         path: "/accounts/me"
                     )
 
-                    requestBuilder.setAuthorization(authorization!)
+                    requestBuilder.setAuthorization(authorization)
 
                     return .success(requestBuilder.getURLRequest())
                 },
                 requestAuthorization: { completion in
-                    let task = self.configuration.accessTokenManager
+                    return self.configuration.accessTokenManager
                         .getAccessToken(
                             accountNumber: accountNumber,
                             retryStrategy: retryStrategy
@@ -52,8 +52,6 @@ extension REST {
                                 return .accessToken(tokenData.accessToken)
                             })
                         }
-
-                    return .pending(task)
                 }
             )
 

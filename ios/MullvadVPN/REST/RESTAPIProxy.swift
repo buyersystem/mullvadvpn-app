@@ -32,7 +32,7 @@ extension REST {
             completionHandler: @escaping CompletionHandler<AccountResponse>
         ) -> Cancellable
         {
-            let requestHandler = AnyRequestHandler { endpoint, authorization in
+            let requestHandler = AnyRequestHandler { endpoint in
                 let request = self.requestFactory.createURLRequest(
                     endpoint: endpoint,
                     method: .post,
@@ -61,7 +61,7 @@ extension REST {
             completionHandler: @escaping CompletionHandler<[AnyIPEndpoint]>
         ) -> Cancellable
         {
-            let requestHandler = AnyRequestHandler { endpoint, authorization in
+            let requestHandler = AnyRequestHandler { endpoint in
                 let request = self.requestFactory.createURLRequest(
                     endpoint: endpoint,
                     method: .get,
@@ -91,7 +91,7 @@ extension REST {
             completionHandler: @escaping CompletionHandler<ServerRelaysCacheResponse>
         ) -> Cancellable
         {
-            let requestHandler = AnyRequestHandler { endpoint, authorization in
+            let requestHandler = AnyRequestHandler { endpoint in
                 var requestBuilder = self.requestFactory.createURLRequestBuilder(
                     endpoint: endpoint,
                     method: .get,
@@ -134,7 +134,7 @@ extension REST {
             completionHandler: @escaping CompletionHandler<AccountResponse>
         ) -> Cancellable
         {
-            let requestHandler = AnyRequestHandler { endpoint, authorization in
+            let requestHandler = AnyRequestHandler { endpoint in
                 var requestBuilder = self.requestFactory
                     .createURLRequestBuilder(
                         endpoint: endpoint,
@@ -167,7 +167,7 @@ extension REST {
             completionHandler: @escaping CompletionHandler<WireguardAddressesResponse>
         ) -> Cancellable
         {
-            let requestHandler = AnyRequestHandler { endpoint, authorization in
+            let requestHandler = AnyRequestHandler { endpoint in
                 let urlEncodedPublicKey = publicKey.base64Key
                     .addingPercentEncoding(withAllowedCharacters: .alphanumerics)!
                 let path = "wireguard-keys/".appending(urlEncodedPublicKey)
@@ -204,7 +204,7 @@ extension REST {
             completionHandler: @escaping CompletionHandler<WireguardAddressesResponse>
         ) -> Cancellable
         {
-            let requestHandler = AnyRequestHandler { endpoint, authorization in
+            let requestHandler = AnyRequestHandler { endpoint in
                 var requestBuilder = self.requestFactory.createURLRequestBuilder(
                     endpoint: endpoint,
                     method: .post,
@@ -248,7 +248,7 @@ extension REST {
             completionHandler: @escaping CompletionHandler<WireguardAddressesResponse>
         ) -> Cancellable
         {
-            let requestHandler = AnyRequestHandler { endpoint, authorization in
+            let requestHandler = AnyRequestHandler { endpoint in
                 var requestBuilder = self.requestFactory.createURLRequestBuilder(
                     endpoint: endpoint,
                     method: .post,
@@ -292,7 +292,7 @@ extension REST {
             completionHandler: @escaping CompletionHandler<Void>
         ) -> Cancellable
         {
-            let requestHandler = AnyRequestHandler { endpoint, authorization in
+            let requestHandler = AnyRequestHandler { endpoint in
                 let urlEncodedPublicKey = publicKey.base64Key
                     .addingPercentEncoding(withAllowedCharacters: .alphanumerics)!
                 
@@ -332,7 +332,7 @@ extension REST {
             completionHandler: @escaping CompletionHandler<CreateApplePaymentResponse>
         ) -> Cancellable
         {
-            let requestHandler = AnyRequestHandler { endpoint, authorization in
+            let requestHandler = AnyRequestHandler { endpoint in
                 var requestBuilder = self.requestFactory
                     .createURLRequestBuilder(
                         endpoint: endpoint,
@@ -385,7 +385,7 @@ extension REST {
             completionHandler: @escaping CompletionHandler<Void>
         ) -> Cancellable
         {
-            let requestHandler = AnyRequestHandler { endpoint, authorization in
+            let requestHandler = AnyRequestHandler { endpoint in
                 var requestBuilder = self.requestFactory.createURLRequestBuilder(
                     endpoint: endpoint,
                     method: .post,
