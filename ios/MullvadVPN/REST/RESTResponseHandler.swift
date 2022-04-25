@@ -15,7 +15,7 @@ protocol RESTResponseHandler {
 }
 
 extension REST {
-    class AnyResponseHandler<Success>: RESTResponseHandler {
+    final class AnyResponseHandler<Success>: RESTResponseHandler {
         typealias HandlerBlock = (HTTPURLResponse, Data) -> Result<Success, REST.Error>
 
         private let handlerBlock: HandlerBlock
@@ -29,11 +29,11 @@ extension REST {
         }
     }
 
-    /// Returns default response handler that parses the JSON body into
-    /// the given `Decodable` type when it encounters HTTP `2xx` code, otherwise
+    /// Returns default response handler that parses JSON response into the
+    /// given `Decodable` type when it encounters HTTP `2xx` code, otherwise
     /// attempts to decode the server error.
-    static func defaultResponseHandler<T: Decodable>(decoding type: T.Type, with decoder: REST.ResponseDecoder) -> REST.AnyResponseHandler<T> {
-        return REST.AnyResponseHandler { response, data in
+    static func defaultResponseHandler<T: Decodable>(decoding type: T.Type, with decoder: REST.ResponseDecoder) -> AnyResponseHandler<T> {
+        return AnyResponseHandler { response, data in
             if HTTPStatus.isSuccess(response.statusCode) {
                 return decoder.decodeSuccessResponse(type, from: data)
             } else {
