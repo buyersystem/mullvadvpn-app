@@ -34,7 +34,7 @@ extension REST {
             }
         }
 
-        /// Parse server error response from JSON and map it `RESTError.server` error kind.
+        /// Parse server error response from JSON and map it to `RESTError.server` error kind.
         func decodeErrorResponseAndMapToServerError<T>(from data: Data) -> Result<T, REST.Error> {
             return decodeErrorResponse(from: data)
                 .flatMap { serverError in
