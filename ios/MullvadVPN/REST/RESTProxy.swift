@@ -65,4 +65,27 @@ extension REST {
             return operation
         }
     }
+
+    class ProxyConfiguration {
+        let session: URLSession
+        let addressCacheStore: AddressCache.Store
+
+        init(session: URLSession, addressCacheStore: AddressCache.Store) {
+            self.session = session
+            self.addressCacheStore = addressCacheStore
+        }
+    }
+
+    class AuthProxyConfiguration: ProxyConfiguration {
+        let accessTokenManager: AccessTokenManager
+
+        init(proxyConfiguration: ProxyConfiguration, accessTokenManager: AccessTokenManager) {
+            self.accessTokenManager = accessTokenManager
+
+            super.init(
+                session: proxyConfiguration.session,
+                addressCacheStore: proxyConfiguration.addressCacheStore
+            )
+        }
+    }
 }
