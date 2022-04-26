@@ -70,6 +70,10 @@ extension REST {
             return .invalidAccessToken
         }
 
+        static func unhandledResponse(_ statusCode: Int) -> ServerErrorResponse {
+            return .init(code: "UNHANDLED_SERVER_RESPONSE_ERROR", error: "HTTP \(statusCode)")
+        }
+
         let code: String
         let error: String?
 
