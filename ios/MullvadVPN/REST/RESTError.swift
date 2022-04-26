@@ -35,7 +35,7 @@ extension REST {
                 return "Network error."
             case .server:
                 return "Server error."
-            case .decodeErrorResponse(_):
+            case .decodeErrorResponse:
                 return "Failure to decode error response from server."
             case .decodeSuccessResponse:
                 return "Failure to decode success response from server."
