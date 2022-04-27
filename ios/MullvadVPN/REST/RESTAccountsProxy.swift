@@ -90,10 +90,18 @@ extension REST {
                 }
             )
 
-            let responseHandler = REST.defaultResponseHandler(
-                decoding: BetaAccountResponse.self,
-                with: responseDecoder
-            )
+            let responseHandler = AnyResponseHandler { response, data -> Result<BetaAccountResponse, REST.Error> in
+                if HTTPStatus.isSuccess(response.statusCode) {
+                    return self.responseDecoder.decodeSuccessResponse(BetaAccountResponse.self, from: data)
+                } else {
+                    let serverResponse = self.responseDecoder.decoderBetaErrorResponse(
+                        from: data,
+                        errorLogger: self.logger
+                    )
+
+                    return .failure(.unhandledResponse(response.statusCode, serverResponse))
+                }
+            }
 
             return addOperation(
                 name: "get-my-account",
