@@ -26,7 +26,7 @@ extension REST {
 
         func createAccount(
             retryStrategy: REST.RetryStrategy,
-            completion: @escaping CompletionHandler<BetaAccountResponse>
+            completion: @escaping CompletionHandler<AccountData>
         ) -> Cancellable {
             let requestHandler = AnyRequestHandler { endpoint in
                 let request = self.requestFactory.createURLRequest(
@@ -37,9 +37,9 @@ extension REST {
                 return .success(request)
             }
 
-            let responseHandler = AnyResponseHandler { response, data -> Result<BetaAccountResponse, REST.Error> in
+            let responseHandler = AnyResponseHandler { response, data -> Result<AccountData, REST.Error> in
                 if HTTPStatus.isSuccess(response.statusCode) {
-                    return self.responseDecoder.decodeSuccessResponse(BetaAccountResponse.self, from: data)
+                    return self.responseDecoder.decodeSuccessResponse(AccountData.self, from: data)
                 } else {
                     let serverResponse = self.responseDecoder.decoderBetaErrorResponse(
                         from: data,
@@ -59,10 +59,10 @@ extension REST {
             )
         }
 
-        func getMyAccount(
+        func getAccountData(
             accountNumber: String,
             retryStrategy: REST.RetryStrategy,
-            completion: @escaping CompletionHandler<BetaAccountResponse>
+            completion: @escaping CompletionHandler<AccountData>
         ) -> Cancellable
         {
             let requestHandler = AnyRequestHandler(
@@ -90,9 +90,9 @@ extension REST {
                 }
             )
 
-            let responseHandler = AnyResponseHandler { response, data -> Result<BetaAccountResponse, REST.Error> in
+            let responseHandler = AnyResponseHandler { response, data -> Result<AccountData, REST.Error> in
                 if HTTPStatus.isSuccess(response.statusCode) {
-                    return self.responseDecoder.decodeSuccessResponse(BetaAccountResponse.self, from: data)
+                    return self.responseDecoder.decodeSuccessResponse(AccountData.self, from: data)
                 } else {
                     let serverResponse = self.responseDecoder.decoderBetaErrorResponse(
                         from: data,
@@ -113,7 +113,7 @@ extension REST {
         }
     }
 
-    struct BetaAccountResponse: Decodable {
+    struct AccountData: Decodable {
         let id: String
         let number: String
         let expiry: Date
