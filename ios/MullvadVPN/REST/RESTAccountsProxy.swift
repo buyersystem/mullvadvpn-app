@@ -24,6 +24,41 @@ extension REST {
             )
         }
 
+        func createAccount(
+            retryStrategy: REST.RetryStrategy,
+            completion: @escaping CompletionHandler<BetaAccountResponse>
+        ) -> Cancellable {
+            let requestHandler = AnyRequestHandler { endpoint in
+                let request = self.requestFactory.createURLRequest(
+                    endpoint: endpoint,
+                    method: .post,
+                    path: "accounts"
+                )
+                return .success(request)
+            }
+
+            let responseHandler = AnyResponseHandler { response, data -> Result<BetaAccountResponse, REST.Error> in
+                if HTTPStatus.isSuccess(response.statusCode) {
+                    return self.responseDecoder.decodeSuccessResponse(BetaAccountResponse.self, from: data)
+                } else {
+                    let serverResponse = self.responseDecoder.decoderBetaErrorResponse(
+                        from: data,
+                        errorLogger: self.logger
+                    )
+
+                    return .failure(.unhandledResponse(response.statusCode, serverResponse))
+                }
+            }
+
+            return addOperation(
+                name: "create-account",
+                retryStrategy: retryStrategy,
+                requestHandler: requestHandler,
+                responseHandler: responseHandler,
+                completionHandler: completion
+            )
+        }
+
         func getMyAccount(
             accountNumber: String,
             retryStrategy: REST.RetryStrategy,
@@ -35,7 +70,7 @@ extension REST {
                     var requestBuilder = self.requestFactory.createURLRequestBuilder(
                         endpoint: endpoint,
                         method: .get,
-                        path: "/accounts/me"
+                        path: "accounts/me"
                     )
 
                     requestBuilder.setAuthorization(authorization)
