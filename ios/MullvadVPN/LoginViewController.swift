@@ -385,7 +385,7 @@ private extension LoginState {
                             comment: "Subhead displayed in the event of unexpected server response."
                         )
 
-                    case .encodePayload, .decodeErrorResponse, .decodeSuccessResponse:
+                    case .createURLRequest, .decodeErrorResponse, .decodeSuccessResponse:
                         return localizedUnknownInternalError
                     }
                 } else {

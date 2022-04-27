@@ -60,12 +60,12 @@ extension REST.Error: DisplayChainedError {
                 responseString,
                 statusCode
             )
-        case .encodePayload:
+        case .createURLRequest:
             return NSLocalizedString(
                 "SERVER_REQUEST_ENCODING_ERROR",
                 tableName: "REST",
-                value: "Server request encoding error",
-                comment: "Failure to encode the server request."
+                value: "Failure to create URL request",
+                comment: ""
             )
         case .decodeSuccessResponse:
             return NSLocalizedString(

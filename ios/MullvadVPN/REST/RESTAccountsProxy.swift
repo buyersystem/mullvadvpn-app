@@ -29,12 +29,11 @@ extension REST {
             completion: @escaping CompletionHandler<AccountData>
         ) -> Cancellable {
             let requestHandler = AnyRequestHandler { endpoint in
-                let request = self.requestFactory.createURLRequest(
+                return self.requestFactory.createURLRequest(
                     endpoint: endpoint,
                     method: .post,
                     path: "accounts"
                 )
-                return .success(request)
             }
 
             let responseHandler = AnyResponseHandler { response, data -> Result<AccountData, REST.Error> in
@@ -75,7 +74,7 @@ extension REST {
 
                     requestBuilder.setAuthorization(authorization)
 
-                    return .success(requestBuilder.getURLRequest())
+                    return requestBuilder.getURLRequest()
                 },
                 requestAuthorization: { completion in
                     return self.configuration.accessTokenManager

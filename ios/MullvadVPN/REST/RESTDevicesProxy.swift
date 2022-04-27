@@ -49,7 +49,7 @@ extension REST {
 
                     requestBuilder.setAuthorization(authorization)
 
-                    return .success(requestBuilder.getURLRequest())
+                    return requestBuilder.getURLRequest()
                 },
                 requestAuthorization: { completion in
                     return self.configuration.accessTokenManager
@@ -108,7 +108,7 @@ extension REST {
 
                     requestBuilder.setAuthorization(authorization)
 
-                    return .success(requestBuilder.getURLRequest())
+                    return requestBuilder.getURLRequest()
                 },
                 requestAuthorization: { completion in
                     return self.configuration.accessTokenManager
@@ -154,18 +154,11 @@ extension REST {
                         method: .post,
                         path: "devices"
                     )
-
                     requestBuilder.setAuthorization(authorization)
 
-                    return Result {
-                        try requestBuilder.setHTTPBody(value: request)
-                    }
-                    .mapError { error in
-                        return .encodePayload(error)
-                    }
-                    .map { _ in
-                        return requestBuilder.getURLRequest()
-                    }
+                    try requestBuilder.setHTTPBody(value: request)
+
+                    return requestBuilder.getURLRequest()
                 },
                 requestAuthorization: { completion in
                     return self.configuration.accessTokenManager
@@ -246,7 +239,7 @@ extension REST {
 
                     requestBuilder.setAuthorization(authorization)
 
-                    return .success(requestBuilder.getURLRequest())
+                    return requestBuilder.getURLRequest()
                 },
                 requestAuthorization: { completion in
                     return self.configuration.accessTokenManager
@@ -308,18 +301,12 @@ extension REST {
 
                     requestBuilder.setAuthorization(authorization)
 
-                    return Result {
-                        let request = RotateDeviceKeyRequest(
-                            pubkey: publicKey.base64Key
-                        )
-                        try requestBuilder.setHTTPBody(value: request)
-                    }
-                    .mapError { error in
-                        return .encodePayload(error)
-                    }
-                    .map { _ in
-                        return requestBuilder.getURLRequest()
-                    }
+                    let request = RotateDeviceKeyRequest(
+                        pubkey: publicKey.base64Key
+                    )
+                    try requestBuilder.setHTTPBody(value: request)
+
+                    return requestBuilder.getURLRequest()
                 },
                 requestAuthorization: { completion in
                     return self.configuration.accessTokenManager
