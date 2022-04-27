@@ -139,6 +139,7 @@ extension REST {
     enum ServerResponseCode {
         static let publicKeyInUse = "PUBKEY_IN_USE"
         static let maxDevicesReached = "MAX_DEVICES_REACHED"
+        static let invalidAccessToken = "INVALID_ACCESS_TOKEN"
     }
 
 }

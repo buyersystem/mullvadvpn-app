@@ -250,8 +250,9 @@ extension REST {
 
             let result = responseHandler.handleURLResponse(response, data: data)
 
-            if case .server(.invalidAccessToken) = result.error,
-                requiresAuthorization, retryInvalidAccessTokenError
+            if case .unhandledResponse(_, let serverResponse) = result.error,
+               serverResponse?.code == ServerResponseCode.invalidAccessToken,
+               requiresAuthorization, retryInvalidAccessTokenError
             {
                 logger.debug(
                     "Received invalid access token error. Retry once.",
