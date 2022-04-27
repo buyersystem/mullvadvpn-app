@@ -49,6 +49,7 @@ Line wrap the file at 100 chars.                                              Th
 - Update Electron from 16.0.4 to 18.0.3.
 - Randomize bridge selection with a bias in favor of close bridges.
 - Make login field keep previous value when submitting an incorrect account number in desktop app.
+- Pause API interactions when the daemon has not been used for 3 days.
 
 ### Fixed
 - Fix the sometimes incorrect time added text after adding time to the account.
