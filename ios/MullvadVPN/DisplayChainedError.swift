@@ -40,6 +40,26 @@ extension REST.Error: DisplayChainedError {
                     serverError.error ?? "(empty)"
                 )
             }
+        case .unhandledResponse(let statusCode, let serverResponse):
+            let responseString = serverResponse?.code
+                ?? serverResponse?.detail
+                ?? NSLocalizedString(
+                    "SERVER_ERROR_EMPTY_REPLACEMENT",
+                    tableName: "REST",
+                    value: "(empty)",
+                    comment: "Used as a replacement when server response does not contain error code or message."
+                )
+
+            return String(
+                format: NSLocalizedString(
+                    "SERVER_ERROR",
+                    tableName: "REST",
+                    value: "Unexpected server response: %1$@ (HTTP status: %2$d)",
+                    comment: "Server error. Use %1$@ placeholder to place server messaeg and %2$d to place HTTP status code."
+                ),
+                responseString,
+                statusCode
+            )
         case .encodePayload:
             return NSLocalizedString(
                 "SERVER_REQUEST_ENCODING_ERROR",

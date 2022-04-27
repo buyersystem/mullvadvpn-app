@@ -12,19 +12,22 @@ extension REST {
 
     /// An error type returned by REST API classes.
     enum Error: ChainedError {
-        /// A failure to encode the payload
+        /// A failure to encode the payload.
         case encodePayload(Swift.Error)
 
-        /// A failure during networking
+        /// A failure during networking.
         case network(URLError)
 
-        /// A failure reported by server
+        /// A failure reported by server.
         case server(REST.ServerErrorResponse)
 
-        /// A failure to decode the error response from server
+        /// A failure to handle response.
+        case unhandledResponse(_ statusCode: Int, _ serverResponse: BetaServerErrorResponse?)
+
+        /// A failure to decode the error response from server.
         case decodeErrorResponse(Swift.Error)
 
-        /// A failure to decode the success response from server
+        /// A failure to decode the success response from server.
         case decodeSuccessResponse(Swift.Error)
 
         var errorDescription: String? {
@@ -35,6 +38,8 @@ extension REST {
                 return "Network error."
             case .server:
                 return "Server error."
+            case .unhandledResponse:
+                return "Failure to handle server response."
             case .decodeErrorResponse:
                 return "Failure to decode error response from server."
             case .decodeSuccessResponse:
@@ -68,10 +73,6 @@ extension REST {
         }
         static var invalidAccessToken: Code {
             return .invalidAccessToken
-        }
-
-        static func unhandledResponse(_ statusCode: Int) -> ServerErrorResponse {
-            return .init(code: "UNHANDLED_SERVER_RESPONSE_ERROR", error: "HTTP \(statusCode)")
         }
 
         let code: String
@@ -128,6 +129,16 @@ extension REST {
         static func == (lhs: Self, rhs: Self) -> Bool {
             return lhs.code == rhs.code
         }
+    }
+
+    struct BetaServerErrorResponse: Decodable {
+        let code: String?
+        let detail: String?
+    }
+
+    enum ServerResponseCode {
+        static let publicKeyInUse = "PUBKEY_IN_USE"
+        static let maxDevicesReached = "MAX_DEVICES_REACHED"
     }
 
 }

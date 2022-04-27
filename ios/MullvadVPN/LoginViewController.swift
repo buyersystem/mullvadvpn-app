@@ -377,6 +377,14 @@ private extension LoginState {
 
                         return message
 
+                    case .unhandledResponse:
+                        return NSLocalizedString(
+                            "SUBHEAD_TITLE_UNEXPECTED_SERVER_RESPONSE_ERROR",
+                            tableName: "Login",
+                            value: "Unexpected server response",
+                            comment: "Subhead displayed in the event of unexpected server response."
+                        )
+
                     case .encodePayload, .decodeErrorResponse, .decodeSuccessResponse:
                         return localizedUnknownInternalError
                     }

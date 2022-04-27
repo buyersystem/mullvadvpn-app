@@ -73,7 +73,12 @@ extension REST {
                 } else if response.statusCode == HTTPStatus.notFound {
                     return .success(nil)
                 } else {
-                    return .failure(.server(.unhandledResponse(response.statusCode)))
+                    let serverResponse = self.responseDecoder.decoderBetaErrorResponse(
+                        from: data,
+                        errorLogger: self.logger
+                    )
+
+                    return .failure(.unhandledResponse(response.statusCode, serverResponse))
                 }
             }
 
@@ -139,7 +144,7 @@ extension REST {
             accountNumber: String,
             request: CreateDeviceRequest,
             retryStrategy: REST.RetryStrategy,
-            completion: @escaping CompletionHandler<CreateDeviceResponse>
+            completion: @escaping CompletionHandler<CreateDeviceResult>
         ) -> Cancellable
         {
             let requestHandler = AnyRequestHandler(
@@ -175,25 +180,36 @@ extension REST {
                 }
             )
 
-            let responseHandler = AnyResponseHandler { response, data -> Result<CreateDeviceResponse, REST.Error> in
+            let responseHandler = AnyResponseHandler { response, data -> Result<CreateDeviceResult, REST.Error> in
                 if HTTPStatus.isSuccess(response.statusCode) {
                     return self.responseDecoder.decodeSuccessResponse(Device.self, from: data)
                         .map { device in
-                            return .created(device)
+                            return .succeeded(device)
                         }
                 } else if response.statusCode == HTTPStatus.badRequest {
-                    let serverResponse = try? self.responseDecoder
-                        .decodeSuccessResponse(ServerErrorResponseV2.self, from: data)
-                        .get()
+                    let serverResponse = self.responseDecoder.decoderBetaErrorResponse(
+                        from: data,
+                        errorLogger: self.logger
+                    )
 
-                    if serverResponse?.code == "PUBKEY_IN_USE" {
+                    switch serverResponse?.code {
+                    case ServerResponseCode.publicKeyInUse:
                         return .success(.publicKeyInUse)
-                    } else if serverResponse?.code == "MAX_DEVICES_REACHED" {
-                        return .success(.maxDevicesReached)
-                    }
-                }
 
-                return .failure(.server(.unhandledResponse(response.statusCode)))
+                    case ServerResponseCode.maxDevicesReached:
+                        return .success(.maxDevicesReached)
+
+                    default:
+                        return .failure(.unhandledResponse(response.statusCode, serverResponse))
+                    }
+                } else {
+                    let serverResponse = self.responseDecoder.decoderBetaErrorResponse(
+                        from: data,
+                        errorLogger: self.logger
+                    )
+
+                    return .failure(.unhandledResponse(response.statusCode, serverResponse))
+                }
             }
 
             return addOperation(
@@ -251,7 +267,12 @@ extension REST {
                 } else if response.statusCode == HTTPStatus.notFound {
                     return .success(false)
                 } else {
-                    return .failure(.server(.unhandledResponse(response.statusCode)))
+                    let serverResponse = self.responseDecoder.decoderBetaErrorResponse(
+                        from: data,
+                        errorLogger: self.logger
+                    )
+
+                    return .failure(.unhandledResponse(response.statusCode, serverResponse))
                 }
             }
 
@@ -270,7 +291,7 @@ extension REST {
             identifier: String,
             publicKey: PublicKey,
             retryStrategy: REST.RetryStrategy,
-            completion: @escaping CompletionHandler<RotateDeviceKeyResponse>
+            completion: @escaping CompletionHandler<RotateDeviceKeyResult>
         ) -> Cancellable {
             let requestHandler = AnyRequestHandler(
                 createURLRequest: { endpoint, authorization in
@@ -313,25 +334,33 @@ extension REST {
                 }
             )
 
-            let responseHandler = AnyResponseHandler { response, data -> Result<RotateDeviceKeyResponse, REST.Error> in
+            let responseHandler = AnyResponseHandler { response, data -> Result<RotateDeviceKeyResult, REST.Error> in
                 if HTTPStatus.isSuccess(response.statusCode) {
                     return self.responseDecoder.decodeSuccessResponse(Device.self, from: data)
                         .map { device in
                             return .succeeded(device)
                         }
                 } else if response.statusCode == HTTPStatus.badRequest {
-                    let serverResponse = try? self.responseDecoder
-                        .decodeSuccessResponse(ServerErrorResponseV2.self, from: data)
-                        .get()
-
-                    if serverResponse?.code == "PUBKEY_IN_USE" {
+                    let serverResponse = self.responseDecoder.decoderBetaErrorResponse(
+                        from: data,
+                        errorLogger: self.logger
+                    )
+                    
+                    if serverResponse?.code == ServerResponseCode.publicKeyInUse {
                         return .success(.publicKeyInUse)
+                    } else {
+                        return .failure(.unhandledResponse(response.statusCode, serverResponse))
                     }
                 } else if response.statusCode == HTTPStatus.notFound {
                     return .success(.deviceNotFound)
                 }
 
-                return .failure(.server(.unhandledResponse(response.statusCode)))
+                let serverResponse = self.responseDecoder.decoderBetaErrorResponse(
+                    from: data,
+                    errorLogger: self.logger
+                )
+
+                return .failure(.unhandledResponse(response.statusCode, serverResponse))
             }
 
             return addOperation(
@@ -355,21 +384,16 @@ extension REST {
         }
     }
 
-    enum CreateDeviceResponse {
-        case created(Device)
-        case publicKeyInUse // PUBKEY_IN_USE
-        case maxDevicesReached // MAX_DEVICES_REACHED
+    enum CreateDeviceResult {
+        case succeeded(Device)
+        case publicKeyInUse
+        case maxDevicesReached
     }
 
-    enum RotateDeviceKeyResponse {
+    enum RotateDeviceKeyResult {
         case succeeded(Device)
         case deviceNotFound
-        case publicKeyInUse // PUBKEY_IN_USE
-    }
-
-    struct ServerErrorResponseV2: Decodable {
-        let code: String
-        let detail: String?
+        case publicKeyInUse
     }
 
     fileprivate struct RotateDeviceKeyRequest: Encodable {

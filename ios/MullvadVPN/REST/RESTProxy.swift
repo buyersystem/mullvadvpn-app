@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import Logging
 
 extension REST {
     class Proxy<ConfigurationType: ProxyConfiguration> {
@@ -27,6 +28,9 @@ extension REST {
         /// URL response decoder.
         let responseDecoder: REST.ResponseDecoder
 
+        /// Logger.
+        let logger: Logger
+
         init(
             name: String,
             configuration: ConfigurationType,
@@ -40,6 +44,7 @@ extension REST {
             self.configuration = configuration
             self.requestFactory = requestFactory
             self.responseDecoder = responseDecoder
+            self.logger = Logger(label: "REST.\(name)")
         }
 
         func addOperation<Success>(
