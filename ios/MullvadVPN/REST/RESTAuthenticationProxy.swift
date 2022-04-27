@@ -50,10 +50,18 @@ extension REST {
                 }
             }
 
-            let responseHandler = REST.defaultResponseHandler(
-                decoding: AccessTokenData.self,
-                with: responseDecoder
-            )
+            let responseHandler = AnyResponseHandler { response, data -> Result<AccessTokenData, REST.Error> in
+                if HTTPStatus.isSuccess(response.statusCode) {
+                    return self.responseDecoder.decodeSuccessResponse(AccessTokenData.self, from: data)
+                } else {
+                    let serverResponse = self.responseDecoder.decoderBetaErrorResponse(
+                        from: data,
+                        errorLogger: self.logger
+                    )
+
+                    return .failure(.unhandledResponse(response.statusCode, serverResponse))
+                }
+            }
 
             return addOperation(
                 name: "get-access-token",
