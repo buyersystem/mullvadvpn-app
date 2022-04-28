@@ -12,6 +12,7 @@ if which systemctl &> /dev/null; then
 fi
 
 pkill -x "mullvad-gui" || true
+sleep 0.5
 
 rm -f /var/cache/mullvad-vpn/relays.json
 rm -f /var/cache/mullvad-vpn/api-ip-address.txt

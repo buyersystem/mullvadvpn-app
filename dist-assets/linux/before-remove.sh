@@ -24,6 +24,7 @@ elif /sbin/init --version | grep upstart &> /dev/null; then
 fi
 
 pkill -x "mullvad-gui" || true
+sleep 0.5
 
 /opt/Mullvad\ VPN/resources/mullvad-setup reset-firewall || echo "Failed to reset firewall"
 /opt/Mullvad\ VPN/resources/mullvad-setup remove-device || echo "Failed to remove device from account"
